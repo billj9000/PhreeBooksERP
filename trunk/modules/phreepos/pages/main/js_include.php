@@ -268,6 +268,7 @@ function fillOrderData(sXml) { // edit response form fill
 	fillOrder(xml);
   } else if ($(xml).find("BillContact").length) {
     orderFillAddress(xml, 'bill', true);
+    if ($(xml).find("BillData").length) fillBill(xml);@todo
   }
 }
 
@@ -432,6 +433,19 @@ function accountGuess(force) {
   }
 }
 
+function LoadInvoices(){
+	if ( document.getElementById('bill_acct_id').value == '') {
+		var firstguess  = document.getElementById('copy_search').value; 
+		var guess = document.getElementById('search').value;
+		if( firstguess != guess && firstguess != text_search && firstguess != ''){
+			  guess = firstguess;
+		}
+	    window.open('index.php?module=phreebooks&page=popup_bills_accts&list=1&jID=18&type=c&search_text='+guess,"invoices","width=700px,height=550px,resizable=1,scrollbars=1,top=150,left=200");
+	}else{
+
+	}	
+}
+
 function processAccountGuess(sXml) {
   var xml = parseXml(sXml);
   if (!xml) return;
@@ -545,6 +559,7 @@ function addInvRow() {
   cell += '<input type="hidden" name="acct_'+rowCnt+'" id="acct_'+rowCnt+'" value="'+default_inv_acct+'" />';
   cell += '<input type="hidden" name="tax_'+rowCnt+'" id="tax_'+rowCnt+'" value="0" />';
   cell += '<input type="hidden" name="product_tax_'+rowCnt+'" id="product_tax_'+rowCnt+'" value="0" />';
+  cell += '<input type="hidden" name="inv_'+rowCnt+'" id="inv_'+rowCnt+'" value="" />';
   if (display_with_tax) { 
 	cell += '<input type="hidden" name="price_'+rowCnt+'" id="price_'+rowCnt+'" value="'+formatted_zero+'" />';
     cell += '<input type="hidden" name="total_'+rowCnt+'" id="total_'+rowCnt+'" value="'+formatted_zero+'" />';
@@ -576,6 +591,7 @@ function removeInvRow(index) {
 	document.getElementById('acct_'+i).value     	= document.getElementById('acct_'+(i+1)).value;
 	document.getElementById('tax_'+i).value      	= document.getElementById('tax_'+(i+1)).value;
 	document.getElementById('product_tax_'+i).value = document.getElementById('product_tax_'+(i+1)).value;
+	document.getElementById('inv_'+i).value 		= document.getElementById('inv_'+(i+1)).value;
 // Hidden fields
 	document.getElementById('id_'+i).value       	= document.getElementById('id_'+(i+1)).value;
 	document.getElementById('stock_'+i).value    	= document.getElementById('stock_'+(i+1)).value;

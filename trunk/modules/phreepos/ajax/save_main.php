@@ -130,15 +130,16 @@ if (file_exists($custom_path)) { include($custom_path); }
 	  }
 	  if (!$error) {
 	    $order->item_rows[] = array(
-		  'id'        => db_prepare_input($_POST['id_' . $x]),
-	      'sku'       => ($_POST['sku_' . $x] == TEXT_SEARCH) ? '' : $sku,
-		  'pstd'      => $qty,
-		  'desc'      => db_prepare_input($_POST['desc_' . $x]),
-	      'total'     => $currencies->clean_value(db_prepare_input($_POST['total_' . $x]), $order->currencies_code) / $order->currencies_value,
-		  'full'      => $full_price,
-		  'acct'      => db_prepare_input($_POST['acct_' . $x]),
-		  'tax'       => db_prepare_input($_POST['tax_' . $x]),
-	      'serial'    => db_prepare_input($_POST['serial_' . $x]),
+		  'id'        			=> db_prepare_input($_POST['id_' . $x]),
+	      'sku'       			=> ($_POST['sku_' . $x] == TEXT_SEARCH) ? '' : $sku,
+		  'pstd'      			=> $qty,
+		  'desc'      			=> db_prepare_input($_POST['desc_' . $x]),
+	      'total'     			=> $currencies->clean_value(db_prepare_input($_POST['total_' . $x]), $order->currencies_code) / $order->currencies_value,
+		  'full'      			=> $full_price,
+		  'acct'      			=> db_prepare_input($_POST['acct_' . $x]),
+		  'tax'       			=> db_prepare_input($_POST['tax_' . $x]),
+	      'serial'    			=> db_prepare_input($_POST['serial_' . $x]),
+	      'serialize_number'	=> db_prepare_input($_POST['inv_' . $x]),
 /*rest is not used	    
 		  'price'     => $price,
 		  'weight'    => db_prepare_input($_POST['weight_' . $x]),

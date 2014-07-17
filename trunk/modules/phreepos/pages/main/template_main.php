@@ -72,6 +72,7 @@ echo $toolbar->build_toolbar();
 <?php echo html_button_field('home', TEXT_HOME, 'onclick="location.href = \'' . html_href_link(FILENAME_DEFAULT, '', 'SSL') . '\'"'); ?><br/><br/>
 <?php echo html_button_field('open_sales', POS_PRINT_OTHER,'onclick="OpenOrdrList(this)"');?><br/><br/>
 <?php echo html_button_field('other_trans', TEXT_OTHER_TRANS,'onclick="ShowOtherTrans()"');?><br/><br/>
+<?php echo html_button_field('load_invoices', "load invoices",'onclick="LoadInvoices()"');?><br/><br/>
 <?php if(in_array($_SESSION['admin_security'][SECURITY_ID_POS_CLOSING], array(1,2,3,4))) echo html_button_field('close_till', POS_HEADING_CLOSING, 'onclick="CloseTill()"' ).'<br/><br/>'; ?>
 </div>
 <fieldset id="search_part">
