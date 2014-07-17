@@ -139,7 +139,7 @@ if (file_exists($custom_path)) { include($custom_path); }
 		  'acct'      			=> db_prepare_input($_POST['acct_' . $x]),
 		  'tax'       			=> db_prepare_input($_POST['tax_' . $x]),
 	      'serial'    			=> db_prepare_input($_POST['serial_' . $x]),
-	      'serialize_number'	=> db_prepare_input($_POST['inv_' . $x]),
+	      'invoice_number'		=> db_prepare_input($_POST['inv_' . $x]),
 /*rest is not used	    
 		  'price'     => $price,
 		  'weight'    => db_prepare_input($_POST['weight_' . $x]),

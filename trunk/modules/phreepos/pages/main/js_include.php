@@ -55,6 +55,7 @@ var save_allowed		 = true;
 var display_with_tax     = <?php echo PHREEPOS_DISPLAY_WITH_TAX; ?>;
 var discount_from_total  = <?php echo PHREEPOS_DISCOUNT_OF; ?>;
 var rounding_of          = <?php echo PHREEPOS_ROUNDING; ?>;
+var text_invoice		 = '<?php echo TEXT_INVOICE; ?>';
 var newdecimal_places    = '';
 var newdecimal_precise   = '';
 var newdecimal_point     = '';
@@ -208,7 +209,7 @@ function resetForm() {
 	// handle checkboxes
 	document.getElementById('bill_add_update').checked  = false;
 	changeOfTill();
-// remove all item rows and add a new blank one
+	// remove all item rows and add a new blank one
 	while (document.getElementById('item_table_body').rows.length >= 1) document.getElementById('item_table_body').deleteRow(-1);
 	while (document.getElementById('payment_table_body').rows.length >= 1) document.getElementById('payment_table_body').deleteRow(-1);
 	updateTotalPrices();
@@ -223,9 +224,9 @@ function clearAddress(type) {
 	document.getElementById(type+'_country_code').value         = store_country_code;
 	document.getElementById(type+'_to_select').style.visibility = 'hidden';
   	if (document.getElementById(type+'_to_select')) {
-      while (document.getElementById(type+'_to_select').options.length) {
-	    document.getElementById(type+'_to_select').remove(0);
-      }
+      	while (document.getElementById(type+'_to_select').options.length) {
+	    	document.getElementById(type+'_to_select').remove(0);
+      	}
   	}
     document.getElementById('copy_bill_primary_name').value       = default_array[0];
   	document.getElementById('copy_bill_primary_name').style.color = inactive_text_color;
@@ -260,6 +261,18 @@ function ajaxOrderData(cID, oID, jID, open_order, ship_only) {
 	}
 }
 
+function ajaxBillData(cID, bID, jID) {
+	$.ajax({
+	  	type: "GET",
+		url: 'index.php?module=phreebooks&page=ajax&op=load_bill&cID='+cID+'&bID='+bID+'&jID='+jID,
+	    dataType: ($.browser.msie) ? "text" : "xml",
+	    error: function(XMLHttpRequest, textStatus, errorThrown) {
+			alert ("Ajax Error: " + XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown);
+	    },
+		success: fillOrderData
+	});
+}
+
 function fillOrderData(sXml) { // edit response form fill
   var xml = parseXml(sXml);
   if (!xml) return;
@@ -268,7 +281,7 @@ function fillOrderData(sXml) { // edit response form fill
 	fillOrder(xml);
   } else if ($(xml).find("BillContact").length) {
     orderFillAddress(xml, 'bill', true);
-    if ($(xml).find("BillData").length) fillBill(xml);@todo
+    if ($(xml).find("BillData").length) fillBill(xml);
   }
 }
 
@@ -334,13 +347,18 @@ function orderFillAddress(xml, type, fill_address) {
     document.getElementById(type+'_to_select').style.visibility      = 'visible';
     document.getElementById(type+'_to_select').disabled              = false;
   });
-  numRows = document.getElementById('item_table_body').rows.length;
-  for (i=1; i<=numRows; i++) {
-	if(document.getElementById('sku_'+i).value !=''){
-  	  updateRowTotal(i, true);
-	}
-  }
-  document.getElementById('sku').focus();
+  	numRows = document.getElementById('item_table_body').rows.length;
+  	for (rowCnt=1; rowCnt<=numRows; rowCnt++) {
+		if(document.getElementById('sku_'+rowCnt).value !=''){
+		  	if(default_sales_tax == -1){
+				document.getElementById('tax_'   +rowCnt).value     = document.getElementById('product_tax_'+rowCnt).value;
+		  	}else{
+				document.getElementById('tax_'   +rowCnt).value     = default_sales_tax;
+		  	}
+  	  		updateRowTotal(rowCnt, true);
+		}
+  	}
+  	document.getElementById('sku').focus();
 }
 
 function fillOrder(xml) {
@@ -401,6 +419,39 @@ function fillOrder(xml) {
   });
 }
 
+function fillBill(xml) {
+	$(xml).find("BillData").each(function() {
+		$(this).children().each (function() {
+			var tagName = this.tagName;
+			if (document.getElementById(tagName)) {
+		    	document.getElementById(tagName).value = $(this).first().text();
+		    	document.getElementById(tagName).style.color = '';
+		  	}
+		});
+	});
+	// fill invoice rows
+	var jIndex = 1;
+	$(xml).find("Item").each(function() {
+		addInvRow();
+		rowCnt = document.getElementById('item_table_body').rows.length;
+		if ($(this).find("waiting").text() != '1') {// waiting for invoice (no invoice number)
+			insertValue('pstd_'    + rowCnt, 1);
+			$('#pstd_' + rowCnt).prop('disabled', true);
+			insertValue('id_'    + rowCnt, $(this).find("id").text());
+			insertValue('inv_'   + rowCnt, $(this).find("purchase_invoice_id").text());
+			insertValue('acct_'  + rowCnt, $(this).find("gl_acct_id").text());
+			insertValue('desc_'  + rowCnt, text_invoice + ' ' + $(this).find("purchase_invoice_id").text());
+			insertValue('total_' + rowCnt, $(this).find("total_amount").text());
+			insertValue('wttotal_' + rowCnt, $(this).find("total_amount").text());
+			insertValue('wtprice_' + rowCnt, $(this).find("total_amount").text());
+			$('#sku_prop_'+rowCnt).hide();
+			$('#serial_'+rowCnt).hide();
+			$('#sku_'+rowCnt).hide();
+		}
+	});
+	updateTotalPrices();
+}
+
 function accountGuess(force) {
   if (!force) {
 	AccountList();
@@ -441,9 +492,12 @@ function LoadInvoices(){
 			  guess = firstguess;
 		}
 	    window.open('index.php?module=phreebooks&page=popup_bills_accts&list=1&jID=18&type=c&search_text='+guess,"invoices","width=700px,height=550px,resizable=1,scrollbars=1,top=150,left=200");
+	 
 	}else{
-
-	}	
+//@todo
+alert('te doen');
+	}
+	open_other_options();	
 }
 
 function processAccountGuess(sXml) {
@@ -523,7 +577,7 @@ function addInvRow() {
   var rowCnt = newRow.rowIndex;
   // NOTE: any change here also need to be made to template form for reload if action fails
   cell  = '<td align="center">';
-  cell += buildIcon(icon_path+'16x16/emblems/emblem-unreadable.png', image_delete_text, 'onclick="if (confirm(\''+image_delete_msg+'\')) removeInvRow('+rowCnt+');"') + '</td>';
+  cell += buildIcon(icon_path+'16x16/emblems/emblem-unreadable.png', image_delete_text, '  id="delete_'+rowCnt+'" onclick="if (confirm(\''+image_delete_msg+'\')) removeInvRow('+rowCnt+');"') + '</td>';
   newCell = newRow.insertCell(-1);
   newCell.innerHTML = cell;
   cell  = '<td align="left"><input type="text" name="pstd_'+rowCnt+'" id="pstd_'+rowCnt+'" size="5" maxlength="6" onchange="updateRowTotal('+rowCnt+', true)" style="text-align:right" />';
@@ -576,37 +630,49 @@ function addInvRow() {
 }
 
 function removeInvRow(index) {
-  var i, acctIndex, offset, newOffset;
-  var numRows = document.getElementById('item_table_body').rows.length;
-  // remove row from display by reindexing and then deleting last row
-  for (i=index; i<numRows; i++) {
-	// move the delete icon from the previous row
-	offset    = i+1;
-	newOffset = i;
-	document.getElementById('item_table_body').rows[newOffset].cells[0].innerHTML = delete_icon_HTML + i + ');">';
-	document.getElementById('pstd_'+i).value     	= document.getElementById('pstd_'+(i+1)).value;
-	document.getElementById('sku_'+i).value      	= document.getElementById('sku_'+(i+1)).value;
-	document.getElementById('desc_'+i).value     	= document.getElementById('desc_'+(i+1)).value;
-	document.getElementById('price_'+i).value    	= document.getElementById('price_'+(i+1)).value;
-	document.getElementById('acct_'+i).value     	= document.getElementById('acct_'+(i+1)).value;
-	document.getElementById('tax_'+i).value      	= document.getElementById('tax_'+(i+1)).value;
-	document.getElementById('product_tax_'+i).value = document.getElementById('product_tax_'+(i+1)).value;
-	document.getElementById('inv_'+i).value 		= document.getElementById('inv_'+(i+1)).value;
-// Hidden fields
-	document.getElementById('id_'+i).value       	= document.getElementById('id_'+(i+1)).value;
-	document.getElementById('stock_'+i).value    	= document.getElementById('stock_'+(i+1)).value;
-	document.getElementById('inactive_'+i).value 	= document.getElementById('inactive_'+(i+1)).value;
-	document.getElementById('serial_'+i).value   	= document.getElementById('serial_'+(i+1)).value;
-	document.getElementById('full_'+i).value     	= document.getElementById('full_'+(i+1)).value;
-	document.getElementById('fixed_price_'+i).value	= document.getElementById('fixed_price_'+(i+1)).value;
-	document.getElementById('disc_'+i).value     	= document.getElementById('disc_'+(i+1)).value;
-// End hidden fields
-	document.getElementById('total_'+i).value    	= document.getElementById('total_'+(i+1)).value;
-	document.getElementById('wttotal_'+i).value  	= document.getElementById('wttotal_'+(i+1)).value;
-	document.getElementById('wtprice_'+i).value  	= document.getElementById('wtprice_'+(i+1)).value;
-  }
-  document.getElementById('item_table_body').deleteRow(-1);
-  updateTotalPrices();
+  	var i, acctIndex, offset, newOffset;
+  	var numRows = document.getElementById('item_table_body').rows.length;
+  	// remove row from display by reindexing and then deleting last row
+  	for (i=index; i<numRows; i++) {
+		// move the delete icon from the previous row
+		offset    = i+1;
+		newOffset = i;
+		$('#delete_'+i).unbind('click').click(function(){
+			if (confirm(image_delete_msg)) removeInvRow(i);
+		});
+		document.getElementById('pstd_'+i).value     	= document.getElementById('pstd_'+(i+1)).value;
+		document.getElementById('sku_'+i).value      	= document.getElementById('sku_'+(i+1)).value;
+		document.getElementById('desc_'+i).value     	= document.getElementById('desc_'+(i+1)).value;
+		document.getElementById('price_'+i).value    	= document.getElementById('price_'+(i+1)).value;
+		document.getElementById('acct_'+i).value     	= document.getElementById('acct_'+(i+1)).value;
+		document.getElementById('tax_'+i).value      	= document.getElementById('tax_'+(i+1)).value;
+		document.getElementById('product_tax_'+i).value = document.getElementById('product_tax_'+(i+1)).value;
+		document.getElementById('inv_'+i).value 		= document.getElementById('inv_'+(i+1)).value;
+		// Hidden fields
+		document.getElementById('id_'+i).value       	= document.getElementById('id_'+(i+1)).value;
+		document.getElementById('stock_'+i).value    	= document.getElementById('stock_'+(i+1)).value;
+		document.getElementById('inactive_'+i).value 	= document.getElementById('inactive_'+(i+1)).value;
+		document.getElementById('serial_'+i).value   	= document.getElementById('serial_'+(i+1)).value;
+		document.getElementById('full_'+i).value     	= document.getElementById('full_'+(i+1)).value;
+		document.getElementById('fixed_price_'+i).value	= document.getElementById('fixed_price_'+(i+1)).value;
+		document.getElementById('disc_'+i).value     	= document.getElementById('disc_'+(i+1)).value;
+		// End hidden fields
+		document.getElementById('total_'+i).value    	= document.getElementById('total_'+(i+1)).value;
+		document.getElementById('wttotal_'+i).value  	= document.getElementById('wttotal_'+(i+1)).value;
+		document.getElementById('wtprice_'+i).value  	= document.getElementById('wtprice_'+(i+1)).value;
+		if(document.getElementById('sku_'+i).value != ''){
+			$('#pstd_' + i).prop('disabled', false);
+			$('#sku_prop_'+i).show();
+			$('#sku_'+i).show();
+		} else if(document.getElementById('inv_'+i).value != ''){
+			$('#pstd_' + i).prop('disabled', true);
+			$('#sku_prop_'+i).hide();
+			$('#serial_'+i).hide();
+			$('#sku_'+i).hide();
+		}
+  	}
+  	document.getElementById('item_table_body').deleteRow(-1);
+  	updateTotalPrices();
 } 
 
 function addPmtRow() {
@@ -688,8 +754,8 @@ function updateRowTotal(rowCnt, useAjax) {
 	document.getElementById('wtprice_' +rowCnt).value	 = formatCurrency(wtunit_price);
 	// calculate discount
 	if (full_price > 0) {
-	  var discount = (full_price - unit_price) / full_price;
-	  document.getElementById('disc_'+rowCnt).value = new String(Math.round(1000*discount)/10);
+	  	var discount = (full_price - unit_price) / full_price;
+	  	document.getElementById('disc_'+rowCnt).value = new String(Math.round(1000*discount)/10);
 	}
 	updateTotalPrices();
 	// call the ajax price sheet update based on customer
@@ -945,33 +1011,33 @@ function newformatPrecise(amount) { // convert to expected currency format with 
 
 // AJAX auto load SKU pair
 function loadSkuDetails(iID, rowCnt) {
-  var qty, sku;
-  // check to see if there is a sku present
-  if (!iID) sku = document.getElementById('sku').value; // read the search field as the real value
-  if (!iID && (sku == '' || sku === text_search)) return;
-  // search if item is aready present then increment it by one
-  var numRows = document.getElementById('item_table_body').rows.length;
-  var qty = 1;
-  var rowCnt = 0;
-  for (var i=1; i<=numRows; i++) {
-	if (document.getElementById('sku_' +i).value == sku && document.getElementById('fixed_price_' +i).value > formatted_zero){
-	  qty = document.getElementById('pstd_' +i).value;
-	  qty++;
-	  rowCnt = i;
-	}
-  }
-  var cID = document.getElementById('bill_acct_id').value;
-  var bID = document.getElementById('store_id').value;
-  $.ajax({
-    type: "GET",
-    contentType: "application/xml; charset=utf-8",
-	url: 'index.php?module=inventory&page=ajax&op=inv_details&fID=skuDetails&bID='+bID+'&cID='+cID+'&qty='+qty+'&iID='+iID+'&strict=1&sku='+sku+'&rID='+rowCnt+'&jID='+journalID,
-    dataType: ($.browser.msie) ? "text" : "xml",
-    error: function(XMLHttpRequest, textStatus, errorThrown) {
-      alert ("Ajax Error: " + XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown);
-    },
-    success: fillInventory
-  });
+  	var qty, sku;
+	// check to see if there is a sku present
+  	if (!iID) sku = document.getElementById('sku').value; // read the search field as the real value
+  	if (!iID && (sku == '' || sku === text_search)) return;
+	// search if item is aready present then increment it by one
+  	var numRows = document.getElementById('item_table_body').rows.length;
+  	var qty = 1;
+  	var rowCnt = 0;
+  	for (var i=1; i<=numRows; i++) {
+		if (document.getElementById('sku_' +i).value == sku && document.getElementById('fixed_price_' +i).value > formatted_zero){
+	  		qty = document.getElementById('pstd_' +i).value;
+	  		qty++;
+	  		rowCnt = i;
+		}
+  	}
+  	var cID = document.getElementById('bill_acct_id').value;
+  	var bID = document.getElementById('store_id').value;
+	$.ajax({
+	    type: "GET",
+	    contentType: "application/xml; charset=utf-8",
+		url: 'index.php?module=inventory&page=ajax&op=inv_details&fID=skuDetails&bID='+bID+'&cID='+cID+'&qty='+qty+'&iID='+iID+'&strict=1&sku='+sku+'&rID='+rowCnt+'&jID='+journalID,
+	    dataType: ($.browser.msie) ? "text" : "xml",
+	    error: function(XMLHttpRequest, textStatus, errorThrown) {
+	    	alert ("Ajax Error: " + XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown);
+	    },
+	    success: fillInventory
+	});
 }
 
 function fillInventory(sXml) {

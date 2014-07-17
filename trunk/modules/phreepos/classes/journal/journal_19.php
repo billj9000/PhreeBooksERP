@@ -195,11 +195,11 @@ class journal_19 extends journal {
   function add_item_journal_rows() {	// read in line items and add to journal row array
 	  $total = 0;
 	  for ($i = 0; $i < count($this->item_rows); $i++) {
-		if ($this->item_rows[$i]['pstd']) { // make sure the quantity line is set and not zero
+		if ($this->item_rows[$i]['pstd'] || $this->item_rows[$i]['invoice_number'] ) { // make sure the quantity line is set and not zero
 		  $this->journal_rows[] = array(
 			'id'                      => $this->item_rows[$i]['id'],	// retain the db id (used for updates)
 			'so_po_item_ref_id'       => 0,	// item reference id for so/po line items
-			'gl_type'                 => $this->gl_type,
+			'gl_type'                 => ($this->item_rows[$i]['invoice_number']) ? 'ipmt' : $this->gl_type,
 			'sku'                     => $this->item_rows[$i]['sku'],
 			'qty'                     => $this->item_rows[$i]['pstd'],
 			'description'             => $this->item_rows[$i]['desc'],
@@ -207,7 +207,7 @@ class journal_19 extends journal {
 			'full_price'              => $this->item_rows[$i]['full'],
 			'gl_account'              => $this->item_rows[$i]['acct'],
 			'taxable'                 => $this->item_rows[$i]['tax'],
-			'serialize_number'        => $this->item_rows[$i]['serial'],
+			'serialize_number'        => ($this->item_rows[$i]['invoice_number'])? $this->item_rows[$i]['invoice_number'] : $this->item_rows[$i]['serial'],
 			'project_id'              => $this->item_rows[$i]['proj'],
 			'post_date'               => $this->post_date,
 			'date_1'                  => '',
@@ -218,50 +218,50 @@ class journal_19 extends journal {
 	  return $total;
   }
 
-  function add_tax_journal_rows() {
-	global $currencies;
-	  $total        = 0;
-	  $auth_array   = array();
-	  $tax_rates    = ord_calculate_tax_drop_down('b');
-	  $tax_auths    = gen_build_tax_auth_array();
-	  $tax_discount = $this->account_type == 'v' ? AP_TAX_BEFORE_DISCOUNT : AR_TAX_BEFORE_DISCOUNT;
-	  // calculate each tax value by authority per line item
-	  foreach ($this->journal_rows as $idx => $line_item) {
-	    if ($line_item['taxable'] > 0 && ($line_item['gl_type'] == $this->gl_type || $line_item['gl_type'] == 'frt')) {
-		  foreach ($tax_rates as $rate) {
-		    if ($rate['id'] == $line_item['taxable']) {
-			  $auths = explode(':', $rate['auths']);
-			  foreach ($auths as $auth) {
-			    $line_total = $line_item['debit_amount'] + $line_item['credit_amount']; // one will always be zero
-			    if (ENABLE_ORDER_DISCOUNT && $tax_discount == '0') {
-				  $line_total = $line_total * (1 - $this->disc_percent);
+	function add_tax_journal_rows() {
+		global $currencies;
+		$total        = 0;
+		$auth_array   = array();
+		$tax_rates    = ord_calculate_tax_drop_down('b');
+		$tax_auths    = gen_build_tax_auth_array();
+		$tax_discount = $this->account_type == 'v' ? AP_TAX_BEFORE_DISCOUNT : AR_TAX_BEFORE_DISCOUNT;
+		// calculate each tax value by authority per line item
+		foreach ($this->journal_rows as $idx => $line_item) {
+		    if ($line_item['taxable'] > 0 && ($line_item['gl_type'] == $this->gl_type || $line_item['gl_type'] == 'frt')) {
+			  foreach ($tax_rates as $rate) {
+			    if ($rate['id'] == $line_item['taxable']) {
+				  $auths = explode(':', $rate['auths']);
+				  foreach ($auths as $auth) {
+				    $line_total = $line_item['debit_amount'] + $line_item['credit_amount']; // one will always be zero
+				    if (ENABLE_ORDER_DISCOUNT && $tax_discount == '0') {
+					  $line_total = $line_total * (1 - $this->disc_percent);
+				    }
+					$auth_array[$auth] += ($tax_auths[$auth]['tax_rate'] / 100) * $line_total;
+				  }
 			    }
-				$auth_array[$auth] += ($tax_auths[$auth]['tax_rate'] / 100) * $line_total;
 			  }
 		    }
-		  }
-	    }
-	  }
-	  // calculate each tax total by authority and put into journal row array
-	  foreach ($auth_array as $auth => $auth_tax_collected) {
-		if ($auth_tax_collected == '' && $tax_auths[$auth]['account_id'] == '') continue;
-	  	if( ROUND_TAX_BY_AUTH == true ){
-			$amount = number_format($auth_tax_collected, $currencies->currencies[DEFAULT_CURRENCY]['decimal_places'], '.', '');
-		}else {
-			$amount = $auth_tax_collected;
-		} 
-	    $this->journal_rows[] = array( // record for specific tax authority
-		  'qty'                     => '1',
-		  'gl_type'                 => 'tax',		// code for tax entry
-		  'credit_amount' 			=> $amount,
-		  'description'             => $tax_auths[$auth]['description_short'],
-		  'gl_account'              => $tax_auths[$auth]['account_id'],
-		  'post_date'               => $this->post_date,
-	    );
-	    $total += $amount;
-	  }
-	  return $total;
-  }
+		}
+		// calculate each tax total by authority and put into journal row array
+		foreach ($auth_array as $auth => $auth_tax_collected) {
+			if ($auth_tax_collected == '' && $tax_auths[$auth]['account_id'] == '') continue;
+		  	if( ROUND_TAX_BY_AUTH == true ){
+				$amount = number_format($auth_tax_collected, $currencies->currencies[DEFAULT_CURRENCY]['decimal_places'], '.', '');
+			}else {
+				$amount = $auth_tax_collected;
+			} 
+		    $this->journal_rows[] = array( // record for specific tax authority
+			  'qty'                     => '1',
+			  'gl_type'                 => 'tax',		// code for tax entry
+			  'credit_amount' 			=> $amount,
+			  'description'             => $tax_auths[$auth]['description_short'],
+			  'gl_account'              => $tax_auths[$auth]['account_id'],
+			  'post_date'               => $this->post_date,
+		    );
+		    $total += $amount;
+		}
+		return $total;
+	}
 
   // this function adjusts the posted total to the calculated one to take into account fractions of a cent
   function adjust_total($amount) {
