@@ -501,14 +501,14 @@ alert('te doen');
 }
 
 function processAccountGuess(sXml) {
-  var xml = parseXml(sXml);
-  if (!xml) return;
-  var result = $(xml).find("result").text();
-  if (result == 'success') {
-    fillOrderData(xml);
-  } else {
-	AccountList();
-  }
+	var xml = parseXml(sXml);
+	if (!xml) return;
+	var result = $(xml).find("result").text();
+	if (result == 'success') {
+		fillOrderData(xml);
+	} else {
+		AccountList();
+	}
 }
 
 function AccountList(currObj) {
@@ -519,7 +519,7 @@ function AccountList(currObj) {
 	if( firstguess != secondguess && firstguess != text_search && firstguess != ''){
 		  guess = firstguess;
 	}
-	window.open("index.php?module=contacts&page=popup_accts&type="+account_type+"&form=orders&fill=bill&jID=19&search_text="+guess,"accounts","width=850px,height=550px,resizable=1,scrollbars=1,top=150,left=100");
+	window.open("index.php?module=contacts&page=popup_accts&type=c&fill=bill&jID=19&search_text="+guess,"accounts","width=850px,height=550px,resizable=1,scrollbars=1,top=150,left=100");
 }
 
 function InventoryList(rowCnt) {

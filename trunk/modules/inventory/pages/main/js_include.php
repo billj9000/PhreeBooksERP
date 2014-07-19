@@ -184,7 +184,7 @@ function update_full_price_incl_tax(margin, inclTax, fullprice) {
         		 highest = calculate;
         	}
         }
-        document.getElementById('product_margin' ).value = formatCurrency(cleanCurrency(document.getElementById('full_price_with_tax' ).value) / highest);
+        document.getElementById('product_margin' ).value = formatCurrency(cleanCurrency(document.getElementById('full_price_with_tax').value) / highest);
 	}
 //calculate full_price_with_tax	
 	if(inclTax){
