@@ -160,9 +160,6 @@ class ms extends inventory {//Master Stock Item parent of mi
 		$sql_data_array = parent::save();
 		if ($sql_data_array == false) return false;
 		$sql_data_array['inventory_type'] = 'mi';
-		foreach(array('minimum_stock_level', 'reorder_quantity') as $key){
-			unset($sql_data_array[$key]);
-		}
 		// 	split attributes
 		$attr0 = array();
 		$attr1 = array();

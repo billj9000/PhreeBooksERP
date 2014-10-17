@@ -37,7 +37,6 @@ var account_type         = '<?php echo $account_type; ?>';
 var text_search          = '<?php echo TEXT_SEARCH;?>';
 var text_enter_new       = '<?php echo TEXT_ENTER_NEW; ?>';
 var text_properties      = '<?php echo TEXT_PROPERTIES; ?>';
-var post_error           = <?php echo $error ? "true" : "false"; ?>;
 var default_sales_tax    = -1;
 var contact_sales_tax    = -1;
 var image_delete_text    = '<?php echo TEXT_DELETE; ?>';
@@ -46,6 +45,7 @@ var store_country_code   = '<?php echo COMPANY_COUNTRY; ?>';
 var delete_icon_HTML     = '<?php echo substr(html_icon("emblems/emblem-unreadable.png", TEXT_DELETE, "small", "onclick=\"if (confirm(\'" . TEXT_DELETE_ENTRY . "\')) removeInvRow("), 0, -2); ?>';
 var delete_icon_HTML_PMT = '<?php echo substr(html_icon("emblems/emblem-unreadable.png", TEXT_DELETE, "small", "onclick=\"if (confirm(\'" . TEXT_DELETE_ENTRY . "\')) removePmtRow("), 0, -2); ?>';
 var serial_num_prompt    = '<?php echo ORD_JS_SERIAL_NUM_PROMPT; ?>';
+var text_serial_number	 = '<?php echo TEXT_SERIAL_NUMBER; ?>';
 var show_status          = '<?php echo ($account_type == "v") ? AP_SHOW_CONTACT_STATUS : AR_SHOW_CONTACT_STATUS; ?>';
 var warn_form_modified   = '<?php echo ORD_WARN_FORM_MODIFIED; ?>';
 var default_inv_acct     = '<?php echo DEF_INV_GL_ACCT; ?>';
@@ -55,7 +55,6 @@ var save_allowed		 = true;
 var display_with_tax     = <?php echo PHREEPOS_DISPLAY_WITH_TAX; ?>;
 var discount_from_total  = <?php echo PHREEPOS_DISCOUNT_OF; ?>;
 var rounding_of          = <?php echo PHREEPOS_ROUNDING; ?>;
-var text_invoice		 = '<?php echo TEXT_INVOICE; ?>';
 var newdecimal_places    = '';
 var newdecimal_precise   = '';
 var newdecimal_point     = '';
@@ -89,7 +88,7 @@ function check_form() {
   var error_message = "<?php echo JS_ERROR; ?>";
   var todo    = document.getElementById('action').value;
   if (error == 1) {
-    alert(error_message);
+	$.messager.alert('error',error_message,'error');
     return false;
   }
   return true;
@@ -120,7 +119,7 @@ function refreshOrderClock() {
 		url: 'index.php?module=inventory&page=ajax&op=inv_details&fID=skuDetails&cID='+acct+'&qty='+qty+'&upc='+upc+'&rID='+rowCnt+'&jID='+journalID,
 		dataType: ($.browser.msie) ? "text" : "xml",
 		error: function(XMLHttpRequest, textStatus, errorThrown) {
-		  alert ("Ajax Error: " + XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown);
+			$.messager.alert("Ajax Error ", XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown, "error");
 		},
 		success: fillInventory
 	  });
@@ -209,7 +208,7 @@ function resetForm() {
 	// handle checkboxes
 	document.getElementById('bill_add_update').checked  = false;
 	changeOfTill();
-	// remove all item rows and add a new blank one
+// remove all item rows and add a new blank one
 	while (document.getElementById('item_table_body').rows.length >= 1) document.getElementById('item_table_body').deleteRow(-1);
 	while (document.getElementById('payment_table_body').rows.length >= 1) document.getElementById('payment_table_body').deleteRow(-1);
 	updateTotalPrices();
@@ -224,9 +223,9 @@ function clearAddress(type) {
 	document.getElementById(type+'_country_code').value         = store_country_code;
 	document.getElementById(type+'_to_select').style.visibility = 'hidden';
   	if (document.getElementById(type+'_to_select')) {
-      	while (document.getElementById(type+'_to_select').options.length) {
-	    	document.getElementById(type+'_to_select').remove(0);
-      	}
+      while (document.getElementById(type+'_to_select').options.length) {
+	    document.getElementById(type+'_to_select').remove(0);
+      }
   	}
     document.getElementById('copy_bill_primary_name').value       = default_array[0];
   	document.getElementById('copy_bill_primary_name').style.color = inactive_text_color;
@@ -244,7 +243,7 @@ function ajaxOrderData(cID, oID, jID, open_order, ship_only) {
 	    	url: 'index.php?module=phreebooks&page=ajax&op=load_order&cID='+cID+'&oID='+oID+'&jID='+jID+'&so_po=0&ship_only=0',
 	    	dataType: ($.browser.msie) ? "text" : "xml",
 	    	error: function(XMLHttpRequest, textStatus, errorThrown) {
-	      		alert ("Ajax Error: " + XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown);
+	    		$.messager.alert("Ajax Error ", XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown, "error");
 	    	},
 			success: fillOrderData
 	  	});
@@ -254,23 +253,11 @@ function ajaxOrderData(cID, oID, jID, open_order, ship_only) {
 			url: 'index.php?module=phreepos&page=ajax&op=print_previous&oID='+oID,
 			dataType: ($.browser.msie) ? "text" : "xml",
 			error: function(XMLHttpRequest, textStatus, errorThrown) {
-				alert ("Ajax Error: " + XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown);
+				$.messager.alert("Ajax Error ", XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown, "error");
 			},
 			success: PrintPreviousReceipt
 		});
 	}
-}
-
-function ajaxBillData(cID, bID, jID) {
-	$.ajax({
-	  	type: "GET",
-		url: 'index.php?module=phreebooks&page=ajax&op=load_bill&cID='+cID+'&bID='+bID+'&jID='+jID,
-	    dataType: ($.browser.msie) ? "text" : "xml",
-	    error: function(XMLHttpRequest, textStatus, errorThrown) {
-			alert ("Ajax Error: " + XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown);
-	    },
-		success: fillOrderData
-	});
 }
 
 function fillOrderData(sXml) { // edit response form fill
@@ -281,7 +268,6 @@ function fillOrderData(sXml) { // edit response form fill
 	fillOrder(xml);
   } else if ($(xml).find("BillContact").length) {
     orderFillAddress(xml, 'bill', true);
-    if ($(xml).find("BillData").length) fillBill(xml);
   }
 }
 
@@ -347,18 +333,13 @@ function orderFillAddress(xml, type, fill_address) {
     document.getElementById(type+'_to_select').style.visibility      = 'visible';
     document.getElementById(type+'_to_select').disabled              = false;
   });
-  	numRows = document.getElementById('item_table_body').rows.length;
-  	for (rowCnt=1; rowCnt<=numRows; rowCnt++) {
-		if(document.getElementById('sku_'+rowCnt).value !=''){
-		  	if(default_sales_tax == -1){
-				document.getElementById('tax_'   +rowCnt).value     = document.getElementById('product_tax_'+rowCnt).value;
-		  	}else{
-				document.getElementById('tax_'   +rowCnt).value     = default_sales_tax;
-		  	}
-  	  		updateRowTotal(rowCnt, true);
-		}
-  	}
-  	document.getElementById('sku').focus();
+  numRows = document.getElementById('item_table_body').rows.length;
+  for (i=1; i<=numRows; i++) {
+	if(document.getElementById('sku_'+i).value !=''){
+  	  updateRowTotal(i, true);
+	}
+  }
+  document.getElementById('sku').focus();
 }
 
 function fillOrder(xml) {
@@ -419,39 +400,6 @@ function fillOrder(xml) {
   });
 }
 
-function fillBill(xml) {
-	$(xml).find("BillData").each(function() {
-		$(this).children().each (function() {
-			var tagName = this.tagName;
-			if (document.getElementById(tagName)) {
-		    	document.getElementById(tagName).value = $(this).first().text();
-		    	document.getElementById(tagName).style.color = '';
-		  	}
-		});
-	});
-	// fill invoice rows
-	var jIndex = 1;
-	$(xml).find("Item").each(function() {
-		addInvRow();
-		rowCnt = document.getElementById('item_table_body').rows.length;
-		if ($(this).find("waiting").text() != '1') {// waiting for invoice (no invoice number)
-			insertValue('pstd_'    + rowCnt, 1);
-			$('#pstd_' + rowCnt).prop('disabled', true);
-			insertValue('id_'    + rowCnt, $(this).find("id").text());
-			insertValue('inv_'   + rowCnt, $(this).find("purchase_invoice_id").text());
-			insertValue('acct_'  + rowCnt, $(this).find("gl_acct_id").text());
-			insertValue('desc_'  + rowCnt, text_invoice + ' ' + $(this).find("purchase_invoice_id").text());
-			insertValue('total_' + rowCnt, $(this).find("total_amount").text());
-			insertValue('wttotal_' + rowCnt, $(this).find("total_amount").text());
-			insertValue('wtprice_' + rowCnt, $(this).find("total_amount").text());
-			$('#sku_prop_'+rowCnt).hide();
-			$('#serial_'+rowCnt).hide();
-			$('#sku_'+rowCnt).hide();
-		}
-	});
-	updateTotalPrices();
-}
-
 function accountGuess(force) {
   if (!force) {
 	AccountList();
@@ -464,7 +412,7 @@ function accountGuess(force) {
 	  guess = firstguess;
   }
   // test for data already in the form
-  if (guess == '') return alert('Please enter a guess to search for the contact!');
+  if (guess == '') return $.messager.alert('info','Please enter a guess to search for the contact!','info');
   if (guess != text_search && guess != '') {
     if (document.getElementById('bill_acct_id').value ||
         document.getElementById('bill_primary_name').value != default_array[0]) {
@@ -476,7 +424,7 @@ function accountGuess(force) {
 		url: 'index.php?module=phreebooks&page=ajax&op=load_searches&jID='+journalID+'&type=c&guess='+guess,
 		dataType: ($.browser.msie) ? "text" : "xml",
 		error: function(XMLHttpRequest, textStatus, errorThrown) {
-		  alert ("Ajax Error: " + XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown);
+			$.messager.alert("Ajax Error ", XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown, "error");
 		},
 		success: processAccountGuess
 	  });
@@ -484,31 +432,15 @@ function accountGuess(force) {
   }
 }
 
-function LoadInvoices(){
-	if ( document.getElementById('bill_acct_id').value == '') {
-		var firstguess  = document.getElementById('copy_search').value; 
-		var guess = document.getElementById('search').value;
-		if( firstguess != guess && firstguess != text_search && firstguess != ''){
-			  guess = firstguess;
-		}
-	    window.open('index.php?module=phreebooks&page=popup_bills_accts&list=1&jID=18&type=c&search_text='+guess,"invoices","width=700px,height=550px,resizable=1,scrollbars=1,top=150,left=200");
-	 
-	}else{
-//@todo
-alert('te doen');
-	}
-	open_other_options();	
-}
-
 function processAccountGuess(sXml) {
-	var xml = parseXml(sXml);
-	if (!xml) return;
-	var result = $(xml).find("result").text();
-	if (result == 'success') {
-		fillOrderData(xml);
-	} else {
-		AccountList();
-	}
+  var xml = parseXml(sXml);
+  if (!xml) return;
+  var result = $(xml).find("result").text();
+  if (result == 'success') {
+    fillOrderData(xml);
+  } else {
+	AccountList();
+  }
 }
 
 function AccountList(currObj) {
@@ -519,7 +451,7 @@ function AccountList(currObj) {
 	if( firstguess != secondguess && firstguess != text_search && firstguess != ''){
 		  guess = firstguess;
 	}
-	window.open("index.php?module=contacts&page=popup_accts&type=c&fill=bill&jID=19&search_text="+guess,"accounts","width=850px,height=550px,resizable=1,scrollbars=1,top=150,left=100");
+	window.open("index.php?module=contacts&page=popup_accts&type="+account_type+"&form=orders&fill=bill&jID=19&search_text="+guess,"accounts","width=850px,height=550px,resizable=1,scrollbars=1,top=150,left=100");
 }
 
 function InventoryList(rowCnt) {
@@ -531,9 +463,14 @@ function InventoryList(rowCnt) {
 }
 
 function serialList(rowID) {
-   var choice    = document.getElementById(rowID).value;
-   var newChoice = prompt(serial_num_prompt, choice);
-   if (newChoice) document.getElementById(rowID).value = newChoice;
+	var choice    = document.getElementById(rowID).value;
+  	$.messager.prompt(text_serial_number, serial_num_prompt, function(newChoice){
+		if (newChoice){
+			insertValue(rowID, newChoice);
+		}
+		return false;
+	});
+	$('.messager-input').val(choice).focus();
 }
 
 function fillAddress(type) {
@@ -577,7 +514,7 @@ function addInvRow() {
   var rowCnt = newRow.rowIndex;
   // NOTE: any change here also need to be made to template form for reload if action fails
   cell  = '<td align="center">';
-  cell += buildIcon(icon_path+'16x16/emblems/emblem-unreadable.png', image_delete_text, '  id="delete_'+rowCnt+'" onclick="if (confirm(\''+image_delete_msg+'\')) removeInvRow('+rowCnt+');"') + '</td>';
+  cell += buildIcon(icon_path+'16x16/emblems/emblem-unreadable.png', image_delete_text, 'onclick="if (confirm(\''+image_delete_msg+'\')) removeInvRow('+rowCnt+');"') + '</td>';
   newCell = newRow.insertCell(-1);
   newCell.innerHTML = cell;
   cell  = '<td align="left"><input type="text" name="pstd_'+rowCnt+'" id="pstd_'+rowCnt+'" size="5" maxlength="6" onchange="updateRowTotal('+rowCnt+', true)" style="text-align:right" />';
@@ -613,7 +550,6 @@ function addInvRow() {
   cell += '<input type="hidden" name="acct_'+rowCnt+'" id="acct_'+rowCnt+'" value="'+default_inv_acct+'" />';
   cell += '<input type="hidden" name="tax_'+rowCnt+'" id="tax_'+rowCnt+'" value="0" />';
   cell += '<input type="hidden" name="product_tax_'+rowCnt+'" id="product_tax_'+rowCnt+'" value="0" />';
-  cell += '<input type="hidden" name="inv_'+rowCnt+'" id="inv_'+rowCnt+'" value="" />';
   if (display_with_tax) { 
 	cell += '<input type="hidden" name="price_'+rowCnt+'" id="price_'+rowCnt+'" value="'+formatted_zero+'" />';
     cell += '<input type="hidden" name="total_'+rowCnt+'" id="total_'+rowCnt+'" value="'+formatted_zero+'" />';
@@ -630,49 +566,36 @@ function addInvRow() {
 }
 
 function removeInvRow(index) {
-  	var i, acctIndex, offset, newOffset;
-  	var numRows = document.getElementById('item_table_body').rows.length;
-  	// remove row from display by reindexing and then deleting last row
-  	for (i=index; i<numRows; i++) {
-		// move the delete icon from the previous row
-		offset    = i+1;
-		newOffset = i;
-		$('#delete_'+i).unbind('click').click(function(){
-			if (confirm(image_delete_msg)) removeInvRow(i);
-		});
-		document.getElementById('pstd_'+i).value     	= document.getElementById('pstd_'+(i+1)).value;
-		document.getElementById('sku_'+i).value      	= document.getElementById('sku_'+(i+1)).value;
-		document.getElementById('desc_'+i).value     	= document.getElementById('desc_'+(i+1)).value;
-		document.getElementById('price_'+i).value    	= document.getElementById('price_'+(i+1)).value;
-		document.getElementById('acct_'+i).value     	= document.getElementById('acct_'+(i+1)).value;
-		document.getElementById('tax_'+i).value      	= document.getElementById('tax_'+(i+1)).value;
-		document.getElementById('product_tax_'+i).value = document.getElementById('product_tax_'+(i+1)).value;
-		document.getElementById('inv_'+i).value 		= document.getElementById('inv_'+(i+1)).value;
-		// Hidden fields
-		document.getElementById('id_'+i).value       	= document.getElementById('id_'+(i+1)).value;
-		document.getElementById('stock_'+i).value    	= document.getElementById('stock_'+(i+1)).value;
-		document.getElementById('inactive_'+i).value 	= document.getElementById('inactive_'+(i+1)).value;
-		document.getElementById('serial_'+i).value   	= document.getElementById('serial_'+(i+1)).value;
-		document.getElementById('full_'+i).value     	= document.getElementById('full_'+(i+1)).value;
-		document.getElementById('fixed_price_'+i).value	= document.getElementById('fixed_price_'+(i+1)).value;
-		document.getElementById('disc_'+i).value     	= document.getElementById('disc_'+(i+1)).value;
-		// End hidden fields
-		document.getElementById('total_'+i).value    	= document.getElementById('total_'+(i+1)).value;
-		document.getElementById('wttotal_'+i).value  	= document.getElementById('wttotal_'+(i+1)).value;
-		document.getElementById('wtprice_'+i).value  	= document.getElementById('wtprice_'+(i+1)).value;
-		if(document.getElementById('sku_'+i).value != ''){
-			$('#pstd_' + i).prop('disabled', false);
-			$('#sku_prop_'+i).show();
-			$('#sku_'+i).show();
-		} else if(document.getElementById('inv_'+i).value != ''){
-			$('#pstd_' + i).prop('disabled', true);
-			$('#sku_prop_'+i).hide();
-			$('#serial_'+i).hide();
-			$('#sku_'+i).hide();
-		}
-  	}
-  	document.getElementById('item_table_body').deleteRow(-1);
-  	updateTotalPrices();
+  var i, acctIndex, offset, newOffset;
+  var numRows = document.getElementById('item_table_body').rows.length;
+  // remove row from display by reindexing and then deleting last row
+  for (i=index; i<numRows; i++) {
+	// move the delete icon from the previous row
+	offset    = i+1;
+	newOffset = i;
+	document.getElementById('item_table_body').rows[newOffset].cells[0].innerHTML = delete_icon_HTML + i + ');">';
+	document.getElementById('pstd_'+i).value     	= document.getElementById('pstd_'+(i+1)).value;
+	document.getElementById('sku_'+i).value      	= document.getElementById('sku_'+(i+1)).value;
+	document.getElementById('desc_'+i).value     	= document.getElementById('desc_'+(i+1)).value;
+	document.getElementById('price_'+i).value    	= document.getElementById('price_'+(i+1)).value;
+	document.getElementById('acct_'+i).value     	= document.getElementById('acct_'+(i+1)).value;
+	document.getElementById('tax_'+i).value      	= document.getElementById('tax_'+(i+1)).value;
+	document.getElementById('product_tax_'+i).value = document.getElementById('product_tax_'+(i+1)).value;
+// Hidden fields
+	document.getElementById('id_'+i).value       	= document.getElementById('id_'+(i+1)).value;
+	document.getElementById('stock_'+i).value    	= document.getElementById('stock_'+(i+1)).value;
+	document.getElementById('inactive_'+i).value 	= document.getElementById('inactive_'+(i+1)).value;
+	document.getElementById('serial_'+i).value   	= document.getElementById('serial_'+(i+1)).value;
+	document.getElementById('full_'+i).value     	= document.getElementById('full_'+(i+1)).value;
+	document.getElementById('fixed_price_'+i).value	= document.getElementById('fixed_price_'+(i+1)).value;
+	document.getElementById('disc_'+i).value     	= document.getElementById('disc_'+(i+1)).value;
+// End hidden fields
+	document.getElementById('total_'+i).value    	= document.getElementById('total_'+(i+1)).value;
+	document.getElementById('wttotal_'+i).value  	= document.getElementById('wttotal_'+(i+1)).value;
+	document.getElementById('wtprice_'+i).value  	= document.getElementById('wtprice_'+(i+1)).value;
+  }
+  document.getElementById('item_table_body').deleteRow(-1);
+  updateTotalPrices();
 } 
 
 function addPmtRow() {
@@ -754,8 +677,8 @@ function updateRowTotal(rowCnt, useAjax) {
 	document.getElementById('wtprice_' +rowCnt).value	 = formatCurrency(wtunit_price);
 	// calculate discount
 	if (full_price > 0) {
-	  	var discount = (full_price - unit_price) / full_price;
-	  	document.getElementById('disc_'+rowCnt).value = new String(Math.round(1000*discount)/10);
+	  var discount = (full_price - unit_price) / full_price;
+	  document.getElementById('disc_'+rowCnt).value = new String(Math.round(1000*discount)/10);
 	}
 	updateTotalPrices();
 	// call the ajax price sheet update based on customer
@@ -768,7 +691,7 @@ function updateRowTotal(rowCnt, useAjax) {
 	      url: 'index.php?module=inventory&page=ajax&op=inv_details&fID=skuPrice&cID='+cID+'&sku='+sku+'&qty='+qty+'&rID='+rowCnt+'&strict=1',
 	      dataType: ($.browser.msie) ? "text" : "xml",
 	      error: function(XMLHttpRequest, textStatus, errorThrown) {
-		    alert ("Ajax Error: " + XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown);
+	    	  $.messager.alert("Ajax Error ", XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown, "error");
 	      },
 	      success: processSkuPrice
 	    });
@@ -1009,35 +932,58 @@ function newformatPrecise(amount) { // convert to expected currency format with 
   }
 }
 
-// AJAX auto load SKU pair
-function loadSkuDetails(iID, rowCnt) {
-  	var qty, sku;
-	// check to see if there is a sku present
-  	if (!iID) sku = document.getElementById('sku').value; // read the search field as the real value
-  	if (!iID && (sku == '' || sku === text_search)) return;
+/**
+ * this function is started when you click the sku search icon.
+ */
+function startSkuSearch($sku){
+	if (sku == '' || sku === text_search) return;
 	// search if item is aready present then increment it by one
-  	var numRows = document.getElementById('item_table_body').rows.length;
-  	var qty = 1;
-  	var rowCnt = 0;
-  	for (var i=1; i<=numRows; i++) {
+	var numRows = document.getElementById('item_table_body').rows.length;
+	var qty = 1;
+	var rowCnt = 0;
+	for (var i=1; i<=numRows; i++) {
 		if (document.getElementById('sku_' +i).value == sku && document.getElementById('fixed_price_' +i).value > formatted_zero){
-	  		qty = document.getElementById('pstd_' +i).value;
-	  		qty++;
-	  		rowCnt = i;
+		  	qty = document.getElementById('pstd_' +i).value;
+		  	qty++;
+			rowCnt = i;
 		}
-  	}
-  	var cID = document.getElementById('bill_acct_id').value;
-  	var bID = document.getElementById('store_id').value;
+	}
+	var cID = document.getElementById('bill_acct_id').value;
+	var bID = document.getElementById('store_id').value;
 	$.ajax({
-	    type: "GET",
-	    contentType: "application/xml; charset=utf-8",
-		url: 'index.php?module=inventory&page=ajax&op=inv_details&fID=skuDetails&bID='+bID+'&cID='+cID+'&qty='+qty+'&iID='+iID+'&strict=1&sku='+sku+'&rID='+rowCnt+'&jID='+journalID,
-	    dataType: ($.browser.msie) ? "text" : "xml",
-	    error: function(XMLHttpRequest, textStatus, errorThrown) {
-	    	alert ("Ajax Error: " + XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown);
-	    },
-	    success: fillInventory
+	  type: "GET",
+	  contentType: "application/xml; charset=utf-8",
+	  url: 'index.php?module=inventory&page=ajax&op=inv_details&fID=skuDetails&bID='+bID+'&cID='+cID+'&qty='+qty+'&iID='+iID+'&strict=1&sku='+sku+'&rID='+rowCnt+'&jID='+journalID,
+	  dataType: ($.browser.msie) ? "text" : "xml",
+	  error: function(XMLHttpRequest, textStatus, errorThrown) {
+	  	$.messager.alert("Ajax Error ", XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown, "error");
+	  },
+	  success: fillInventory
 	});
+}
+
+
+/**
+ * this function is called after you click on a row in the inventory pop_up
+ */
+function loadSkuDetails(iID, rowCnt) {
+  var sku;
+  if (!iID) return;
+  // search if item is aready present then increment it by one
+  var qty = 1;
+  var rowCnt = 0;
+  var cID = document.getElementById('bill_acct_id').value;
+  var bID = document.getElementById('store_id').value;
+  $.ajax({
+    type: "GET",
+    contentType: "application/xml; charset=utf-8",
+	url: 'index.php?module=inventory&page=ajax&op=inv_details&fID=skuDetails&bID='+bID+'&cID='+cID+'&qty='+qty+'&iID='+iID+'&strict=1&sku='+sku+'&rID='+rowCnt+'&jID='+journalID,
+    dataType: ($.browser.msie) ? "text" : "xml",
+    error: function(XMLHttpRequest, textStatus, errorThrown) {
+    	$.messager.alert("Ajax Error ", XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown, "error");
+    },
+    success: fillInventory
+  });
 }
 
 function fillInventory(sXml) {
@@ -1138,7 +1084,7 @@ function monitorPrinting() {
     } else {
       var e = qz.getException();
       if (e != null) {
-	    alert("printing exception occured: " + e.getLocalizedMessage());
+    	$.messager.alert("printing exception occured ", e.getLocalizedMessage(),'error');
 	  }
     }
   } 
@@ -1222,13 +1168,12 @@ function SavePayment(PrintOrSave) { // request function
   var f3 = document.getElementById(payment_method+'_field_3') ? document.getElementById(payment_method+'_field_3').value : '';
   var f4 = document.getElementById(payment_method+'_field_4') ? document.getElementById(payment_method+'_field_4').value : '';
 <?php
-  foreach ($payment_modules as $pmt_class) { // fetch the javascript validation of payments module
-	$value = $pmt_class['id'];
-	echo $$value->javascript_validation();
+  foreach ($admin_classes['payment']->methods as $method) { // fetch the javascript validation of payments module
+  	if ($method->installed)	echo $method->javascript_validation();
   }
 ?>
   if ( error_message != ''){
-	  alert(error_message);
+	  $.messager.alert('error',error_message,'error');
 	  return false;
   }
   addPmtRow();
@@ -1259,7 +1204,7 @@ function ajaxSave(PrintOrSave){
 		dataType: ($.browser.msie) ? "text" : "xml",
 		data: $("form").serialize(),
 		error: function(XMLHttpRequest, textStatus, errorThrown) {
-		      alert ("Ajax ErrorThrown: " + errorThrown + "\nTextStatus: " + textStatus + "\nError: " + XMLHttpRequest.responseText);
+			$.messager.alert("Ajax Error ", XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown, "error");
 		      save_allowed = true;
 			},
 		success: ajaxPrintAndClean
@@ -1274,7 +1219,7 @@ function ajaxPrintAndClean(sXml) { // call back function
     var qz = document.getElementById('qz');
     if (!xml) return;
   	var massage 	= $(xml).find("massage").text();
-  	if ( massage ) 	  alert( massage );
+  	if ( massage ) 	 $.messager.alert('info', massage,'info');
   	var action 		= $(xml).find("action").text();
   	var print 		= action.substring(0,5) == 'print';
   	var tillId 		= document.getElementById('till_id').value;
@@ -1335,7 +1280,7 @@ function jzebraDoneFindingPrinters() {
 	var qz = document.getElementById('qz');
 	if (qz.tagName.toLowerCase() == "applet") {
 		if (qz.getPrinter() == null) {
-    		return alert('Error: Can not find Printer ' + tills[tillId].printer);
+    		return $.messager.alert('error','Can not find Printer ' + tills[tillId].printer,'error');
 		} 
    	}
 }
@@ -1345,7 +1290,7 @@ function jzebraDonePrinting() {
 	var qz = document.getElementById('qz');
 	if (qz.tagName.toLowerCase() == "applet") {
    		if (qz.getException() != null) {
-    		return alert('printing error:' + qz.getExceptionMessage());
+    		return $.messager.alert('printing error', qz.getExceptionMessage(),'error');
    		}
    	}
 }
@@ -1361,7 +1306,7 @@ function GetPrintPreviousReceipt() {
       url: 'index.php?module=phreepos&page=ajax&op=print_previous',
       dataType: ($.browser.msie) ? "text" : "xml",
       error: function(XMLHttpRequest, textStatus, errorThrown) {
-      	alert ("Ajax Error: " + XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown);
+    	  $.messager.alert("Ajax Error ", XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown, "error");
       },
       success: PrintPreviousReceipt
      });
@@ -1372,7 +1317,7 @@ function PrintPreviousReceipt(sXml) { // call back function
 	  var qz = document.getElementById('qz');
 	  if (!xml) return;
 	  var massage = $(xml).find("massage").text();
-	  if ( massage ) alert( massage );
+	  if ( massage ) $.messager.alert('info', massage,'info');
 	  var tillId = document.getElementById('till_id').value;
 	  if (qz.tagName.toLowerCase() == "applet" && tills[tillId].printer != '') {
 		  //qz.setEncoding(tills[tillId].printerEncoding);
@@ -1480,7 +1425,7 @@ function SaveOt(){
 		dataType: ($.browser.msie) ? "text" : "xml",
 		data: $("form [name=popupOtherTrans]").serialize(),
 		error: function(XMLHttpRequest, textStatus, errorThrown) {
-		      alert ("Ajax ErrorThrown: " + errorThrown + "\nTextStatus: " + textStatus + "\nError: " + XMLHttpRequest.responseText);
+			$.messager.alert("Ajax Error ", XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown, "error");
 			},
 		success: cleanOt
 	  });
@@ -1507,63 +1452,21 @@ function popupContact(){
 	}
 	//loads popup only if it is disabled
 	if(popupStatus==0){  
-		$("#backgroundPopup").fadeIn("slow");  
-		$("#customer_div").fadeIn("slow");  
+		$('#customer_div').window('open');
 		popupStatus = 1;
 	}
-	var windowWidth = document.documentElement.clientWidth;  
-	var windowHeight = document.documentElement.clientHeight;  
-	var popupHeight = $("#customer_div").height();  
-	var popupWidth = $("#customer_div").width();  
-	//centering  
-	$("#customer_div").css({  
-		"position": "absolute",
-		"top": windowHeight/2-popupHeight/2,  
-		"left": windowWidth/2-popupWidth/2  
-	});  
-	$("#backgroundPopup").css({
-		"position": "absolute",
-		"opacity": "0.7",
-		"background":"#000000",  
-		"top": "0px",  
-		"left": "0px",
-		"height": windowHeight,  
-		"width":  windowWidth	  
-	});
 }  
 
 //loading popup with jQuery magic!  
 function popupPayment(){  
 	//loads popup only if it is disabled
 	if(popupStatus==0){  
-		$("#backgroundPopup").fadeIn("slow");  
-		$("#popupPayment").fadeIn("slow");  
+		$('#popupPayment').window('open');
 		popupStatus = 1;
 		document.getElementById('amount').value = document.getElementById('bal_due').value;
 		activateFields();
 		document.getElementById('amount').select();
-	}
-	//request data for centering  
-	var windowWidth = document.documentElement.clientWidth;  
-	var windowHeight = document.documentElement.clientHeight;  
-	var popupHeight = $("#popupPayment").height();  
-	var popupWidth = $("#popupPayment").width();  
-	//centering  
-	$("#popupPayment").css({  
-		"position": "absolute",
-		"top": windowHeight/2-popupHeight/2,  
-		"left": windowWidth/2-popupWidth/2  
-	});  
-	$("#backgroundPopup").css({
-		"position": "absolute",
-		"opacity": "0.7",
-		"background":"#000000",  
-		"top": "0px",  
-		"left": "0px",
-		"height": windowHeight,  
-		"width":windowWidth	  
-	});
-	
+	}	
 }  
 
 function open_other_options(){
@@ -1581,39 +1484,17 @@ function open_other_options(){
 function ShowOtherTrans(){
 	// start by fadinng out the other options menu bar then show background and 
 	$("#other_options").fadeOut("slow"); 
-	$("#backgroundPopup").fadeIn("slow");  
-	$("#popupOtherTrans").fadeIn("slow");  
+	$('#popupOtherTrans').window('open');  
 	popupStatus = 1;
-	//request data for centering  
-	var windowWidth = document.documentElement.clientWidth;  
-	var windowHeight = document.documentElement.clientHeight;  
-	var popupHeight = $("#popupOtherTrans").height();  
-	var popupWidth = $("#popupOtherTrans").width();  
-	//centering  
-	$("#popupOtherTrans").css({  
-		"position": "absolute",
-		"top": windowHeight/2-popupHeight/2,  
-		"left": windowWidth/2-popupWidth/2  
-	});  
-	$("#backgroundPopup").css({
-		"position": "absolute",
-		"opacity": "0.7",
-		"background":"#000000",  
-		"top": "0px",  
-		"left": "0px",
-		"height": windowHeight,  
-		"width":windowWidth	  
-	});
 }
 
 //disabling popup with jQuery magic!  
 function disablePopup(){  
 	//disables popup only if it is enabled  
 	if(popupStatus==1){  
-		$("#popupOtherTrans").fadeOut("slow");
-		$("#backgroundPopup").fadeOut("slow");  
-		$("#popupPayment").fadeOut("slow"); 
-		$("#customer_div").fadeOut("slow");
+		$("#popupOtherTrans").window('close');
+		$("#popupPayment").window('close'); 
+		$("#customer_div").window('close');
 		popupStatus = 0;  
 		document.getElementById('sku').focus();
 	}  
@@ -1633,10 +1514,6 @@ function setImage(src){
 }
 
 $(document).ready(function(){ 
-	$("#backgroundPopup").click(function(){
-		disablePopup();  
-	});
-
 	$("#disc_percent").keydown(function(event) {
 		$("#discount").val('');
 	});
@@ -1648,7 +1525,6 @@ $(document).ready(function(){
 	$("#amount").keydown(function(event) {
 		if (event.keyCode == 13) SavePayment('save');
 	});
-
 	$("#open_other_options").click(function(){
 		open_other_options();  
 	});
@@ -1657,7 +1533,6 @@ $(document).ready(function(){
 
 //Press Escape event!  
 $(document).keydown(function(event){
-	
 	if (event.altKey && event.keyCode == 82) {
 		event.preventDefault();
 		// if alt + r then redirect to template return

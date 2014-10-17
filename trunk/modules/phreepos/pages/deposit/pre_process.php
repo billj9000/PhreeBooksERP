@@ -17,13 +17,13 @@
 //  Path: /modules/phreepos/pages/deposit/pre_process.php
 //
 
-$security_level = validate_user(SECURITY_ID_CUSTOMER_DEPOSITS);
+$security_level = \core\classes\user::validate(SECURITY_ID_CUSTOMER_DEPOSITS);
 $type           = $_GET['type'];
 switch ($type) {
   case 'c': // customers
 	define('JOURNAL_ID', 18);
 	define('GL_TYPE','pmt');
-	define('POPUP_FORM_TYPE','cust:cm');
+	define('POPUP_FORM_TYPE','bnk:rcpt');
 	define('AUDIT_LOG_DESC',BOX_CUSTOMER_DEPOSITS);
 	define('DEF_DEP_GL_ACCT',AR_DEF_DEP_LIAB_ACCT);
 	define('PAGE_TITLE', BOX_CUSTOMER_DEPOSITS);
@@ -37,47 +37,27 @@ switch ($type) {
 	define('PAGE_TITLE', BOX_VENDOR_DEPOSITS);
     break;
   default:
-    die('Illegal Access type');
+    throw new \core\classes\userException('Illegal Access type');
 }
 /************** include page specific files *********************/
 gen_pull_language('phreebooks');
 gen_pull_language('contacts');
 require_once(DIR_FS_MODULES . 'phreebooks/functions/phreebooks.php');
-require_once(DIR_FS_MODULES . 'phreebooks/classes/gen_ledger.php');
-require_once(DIR_FS_MODULES . 'phreebooks/classes/banking.php');
-require_once(DIR_FS_MODULES . 'phreebooks/classes/orders.php');
-//if (file_exists(DIR_FS_MODULES . 'phreepos/custom/classes/journal/journal_'.JOURNAL_ID.'.php')) { 
-//	require_once(DIR_FS_MODULES . 'phreepos/custom/classes/journal/journal_'.JOURNAL_ID.'.php') ; 
-//}else{
-//    require_once(DIR_FS_MODULES . 'phreepos/classes/journal/journal_'.JOURNAL_ID.'.php'); // is needed here for the defining of the class and retriving the security_token
-//}
-//$class = 'journal_'.JOURNAL_ID;
 /**************   page specific initialization  *************************/
-$error            = false;
 $post_success     = false;
 $default_dep_acct = JOURNAL_ID == 18 ? AR_DEF_DEPOSIT_ACCT : AP_DEF_DEPOSIT_ACCT;
-//$order          = new $class();
-$order            = new banking;
+$order            = new \phreebooks\classes\banking;
 $gl_acct_id       = isset($_POST['gl_acct_id'])          ? db_prepare_input($_POST['gl_acct_id'])          : $order->gl_acct_id;
 $next_inv_ref     = isset($_POST['purchase_invoice_id']) ? db_prepare_input($_POST['purchase_invoice_id']) : $order->purchase_invoice_id;
 $post_date        = isset($_POST['post_date'])           ? gen_db_date($_POST['post_date'])                : date('Y-m-d');
-$period           = gen_calculate_period($post_date);
+$period           = gen_calculate_period($post_date ,true);
 if (!$period) { // bad post_date was submitted
-  $_REQUEST['action']    = '';
-  $post_date = date('Y-m-d');
-  $period    = 0;
+  	$_REQUEST['action']    = '';
+  	$post_date = date('Y-m-d');
+  	$period    = 0;
 }
 $order->gl_acct_id = $gl_acct_id;
 $order->acct_1     = DEF_DEP_GL_ACCT;
-// load available payment modules, receipts only
-$payment_modules   = array();
-if (JOURNAL_ID == 18) {
-  $payment_modules = load_all_methods('payment');
-  foreach ($payment_modules as $pmt_class) {
-	$class  = $pmt_class['id'];
-	$$class = new $class;
-  }
-}
 /***************   hook for custom actions  ***************************/
 $custom_path = DIR_FS_WORKING . 'custom/pages/deposit/extra_actions.php';
 if (file_exists($custom_path)) { include($custom_path); }
@@ -85,7 +65,7 @@ if (file_exists($custom_path)) { include($custom_path); }
 switch ($_REQUEST['action']) {
   case 'save':
   case 'print':
-	validate_security($security_level, 2);
+	\core\classes\user::validate_security($security_level, 2);
   	// create and retrieve customer account (defaults also)
 	$order->bill_short_name     = db_prepare_input($_POST['search']);
 	$order->bill_acct_id        = db_prepare_input($_POST['bill_acct_id']);
@@ -128,16 +108,14 @@ switch ($_REQUEST['action']) {
 	// load the payments
 	switch (JOURNAL_ID) {
 	  case 18:
-	    $payment_module = $order->shipper_code; 
-	    $processor      = new $payment_module;
-	    if ($$payment_module->pre_confirmation_check()) $error = true;	
-		$pmt_meth = db_prepare_input($_POST['shipper_code']);
+	  	$pmt_meth = db_prepare_input($_POST['shipper_code']);
+	    $admin_classes['payment']->methods[$pmt_meth]->pre_confirmation_check();
 		$pmt_amt  = $currencies->clean_value(db_prepare_input($_POST['pmt_' . $x]), $order->currencies_code) / $order->currencies_value;
 		$tot_paid += $pmt_amt;
 		$order->pmt_rows[] = array(
 		  'meth' => $pmt_meth,
 		  'pmt'  => $order->total_amount,
-		  'desc' => GEN_ADM_TOOLS_J18 . '-' . TEXT_TOTAL . ':' . $processor->payment_fields,
+		  'desc' => GEN_ADM_TOOLS_J18 . '-' . TEXT_TOTAL . ':' . $admin_classes['payment']->methods[$pmt_meth]->payment_fields,
 		  'f0'   => db_prepare_input($_POST[$pmt_meth . '_field_0']),
 		  'f1'   => db_prepare_input($_POST[$pmt_meth . '_field_1']),
 		  'f2'   => db_prepare_input($_POST[$pmt_meth . '_field_2']),
@@ -155,13 +133,14 @@ switch ($_REQUEST['action']) {
 	    break;
 	}
 	// error check input
-	if (!$order->period)                break;
-	if (!$order->bill_acct_id)          $error = $messageStack->add(sprintf(ERROR_NO_CONTACT_SELECTED, TEXT_LC_CUSTOMER, TEXT_LC_CUSTOMER, ORD_ADD_UPDATE), 'error');
-	if (!$order->item_rows[0]['total']) $error = $messageStack->add(GL_ERROR_NO_ITEMS, 'error');
+	if (!$order->period)                throw new \core\classes\userException("Period isn't set");
+	if (!$order->bill_acct_id)          throw new \core\classes\userException(sprintf(ERROR_NO_CONTACT_SELECTED, TEXT_LC_CUSTOMER, TEXT_LC_CUSTOMER, ORD_ADD_UPDATE));
+	if (!$order->item_rows[0]['total']) throw new \core\classes\userException(GL_ERROR_NO_ITEMS);
 	// post the receipt/payment
-	if (!$error && $post_success = $order->post_ordr($_REQUEST['action'])) {
+	if ($post_success = $order->post_ordr($_REQUEST['action'])) {
+	  $oID = $order->id; // save id for printing
 	  // now create a credit memo to show a credit on customers account
-	  $order                      = new orders();
+	  $order                      = new \phreebooks\classes\orders();
 	  $order->bill_short_name     = db_prepare_input($_POST['search']);
 	  $order->bill_acct_id        = db_prepare_input($_POST['bill_acct_id']);
 	  $order->bill_address_id     = db_prepare_input($_POST['bill_address_id']);
@@ -192,10 +171,8 @@ switch ($_REQUEST['action']) {
 		'acct'  => db_prepare_input($_POST['acct_1']),
 	  );
 	  $post_credit = $order->post_ordr($_REQUEST['action']);
-	  $messageStack->add("order id is now: $order->id", 'caution');
-	  $oID = $order->id; // need to fetch id for printing
 	  if (!$post_credit) {
-		$order            = new objectInfo($_POST);
+		$order            = new \core\classes\objectInfo($_POST);
 		$order->post_date = gen_db_date($_POST['post_date']); // fix the date to original format
 		$order->id        = ($_POST['id'] <> '') ? $_POST['id'] : ''; // will be null unless opening an existing purchase/receive
 		$messageStack->add(GL_ERROR_NO_POST, 'error');
@@ -206,7 +183,7 @@ switch ($_REQUEST['action']) {
 		gen_redirect(html_href_link(FILENAME_DEFAULT, gen_get_all_get_params(array('action')), 'SSL'));
 	  } // else print or print_update, fall through and load javascript to call form_popup and clear form
 	} else { // else there was a post error, display and re-display form
-	  $order = new objectInfo($_POST);
+	  $order = new \core\classes\objectInfo($_POST);
 	  $order->post_date = gen_db_date($_POST['post_date']); // fix the date to original format
 	  $order->id = ($_POST['id'] <> '') ? $_POST['id'] : ''; // will be null unless opening an existing purchase/receive
 	  $messageStack->add(GL_ERROR_NO_POST, 'error');

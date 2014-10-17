@@ -16,20 +16,19 @@
 // +-----------------------------------------------------------------+
 //  Path: /modules/phreepos/classes/tills.php
 //
-
+namespace phreepos\classes;
 class tills {
 	public $code                    = 'tills';
     public $db_table     			= TABLE_PHREEPOS_TILLS;
     public $help_path   			= '';
-    public $error       			= false;
     public $currencies_code 		= DEFAULT_CURRENCY;
     public $printer_name    		= '';
     public $printer_starting_line 	= '';
 	public $printer_closing_line  	= '';
     public $printer_open_drawer   	= '';
-    
+
     public function __construct(){
-         $this->security_id           = $_SESSION['admin_security'][SECURITY_ID_CONFIGURATION];
+         $this->security_id           = \core\classes\user::validate(SECURITY_ID_CONFIGURATION);
          foreach ($_POST as $key => $value) $this->$key = db_prepare_input($value);
          $this->id = isset($_POST['sID'])? $_POST['sID'] : $_GET['sID'];
          $this->store_ids = gen_get_store_ids();
@@ -37,12 +36,9 @@ class tills {
     }
 
   function btn_save($id = '') {
-  	global $db, $messageStack, $currencies;
-	validate_security($this->security_id, 2);
-	if ($this->gl_acct_id == ''){
-		$messageStack->add(GL_SELECT_STD_CHART,'error');
-		return false;
-	}
+  	global $db, $currencies;
+	\core\classes\user::validate_security($this->security_id, 2);
+	if ($this->gl_acct_id == '') throw new \core\classes\userException(GL_SELECT_STD_CHART);
 	$sql_data_array = array(
 		'description' 		    => $this->description,
 		'store_id'    		    => $this->store_id,
@@ -59,7 +55,7 @@ class tills {
 		'max_discount'		    => $this->max_discount,
 		'tax_id'				=> $this->tax_id,
 	);
-	
+
     if ($id) {
 	  db_perform($this->db_table, $sql_data_array, 'update', "till_id = '" . $id . "'");
 	  gen_add_audit_log(SETUP_TAX_AUTHS_LOG . TEXT_UPDATE, $this->description);
@@ -71,15 +67,14 @@ class tills {
   }
 
   function btn_delete($id = 0) {
-  	global $db, $messageStack;
-	validate_security($this->security_id, 4);
+  	global $db;
+	\core\classes\user::validate_security($this->security_id, 4);
 	// Don't allow delete if there is account activity for this account
-	$sql = "select max(debit_amount) as debit, max(credit_amount) as credit, max(beginning_balance) as beg_bal 
+	$sql = "select max(debit_amount) as debit, max(credit_amount) as credit, max(beginning_balance) as beg_bal
 		from " . TABLE_CHART_OF_ACCOUNTS_HISTORY . " where account_id = '" . $this->gl_acct_id . "'";
 	$result = $db->Execute($sql);
 	if ($result->fields['debit'] <> 0 || $result->fields['credit'] <> 0 || $result->fields['beg_bal'] <> 0) {
-	  $messageStack->add(GL_ERROR_CANT_DELETE, 'error');
-	  return false;
+	  throw new \core\classes\userException(GL_ERROR_CANT_DELETE);
 	}
 	// OK to delete
 	$result = $db->Execute("select description from " . $this->db_table . " where till_id = '" . $id . "'");
@@ -89,7 +84,7 @@ class tills {
   }
 
   function build_main_html() {
-  	global $db, $messageStack ,$currencies;
+  	global $db, $currencies;
     $content = array();
 	$content['thead'] = array(
 	  'value' => array(TEXT_DESCRIPTION, GEN_STORE_ID, TEXT_GL_ACCOUNT, TEXT_ACTION, TEXT_BALANCE),
@@ -104,7 +99,7 @@ class tills {
 	  $content['tbody'][$rowCnt] = array(
 	    array('value' => htmlspecialchars($result->fields['description']),
 			  'params'=> 'style="cursor:pointer" onclick="loadPopUp(\''.$this->code.'_edit\',\''.$result->fields['till_id'].'\')"'),
-		array('value' => htmlspecialchars($result->fields['store_id']), 
+		array('value' => htmlspecialchars($result->fields['store_id']),
 			  'params'=> 'style="cursor:pointer" onclick="loadPopUp(\''.$this->code.'_edit\',\''.$result->fields['till_id'].'\')"'),
 		array('value' => gen_get_type_description(TABLE_CHART_OF_ACCOUNTS, $result->fields['gl_acct_id']),
 			  'params'=> 'style="cursor:pointer" onclick="loadPopUp(\''.$this->code.'_edit\',\''.$result->fields['till_id'].'\')"'),
@@ -121,7 +116,7 @@ class tills {
 
   function build_form_html($action, $id = '') {
     global $db, $currencies;
-    if ($action <> 'new' && $this->error == false) {
+    if ($action <> 'new') {
         $sql = "select * from " . $this->db_table . " where till_id = " . $id;
         $result = $db->Execute($sql);
         foreach ($result->fields as $key => $value) $this->$key = $value;
@@ -201,37 +196,32 @@ class tills {
     $output .= '</table>' . chr(10);
     return $output;
   }
-  
-// functions for template main  
-  function showDropDown(){
-  	global $db, $messageStack;
-  	foreach ($this->store_ids as $store){
-  		$temp[]= $store['id'];
-  	}
-  	$sql = "select till_id, description from " . $this->db_table . " where store_id in (" . implode(',', $temp) . ")";
-    $result = $db->Execute($sql);
-    if ($result->RecordCount()== 0){// trigger_error("Before continuing set a till for this store. This will contain default values to allow this page to work", E_USER_ERROR);// there should always be a till because of defaults values.
-    	$messageStack->add("Before continuing set a till for this store.<br> This will contain default values to allow this page to work", 'error');
-    	gen_redirect(html_href_link(FILENAME_DEFAULT, '', 'SSL')); 
-    }
-    if (defined('ENABLE_ENCRYPTION') && ENABLE_ENCRYPTION == true && (!isset($_SESSION['admin_encrypt']) || $_SESSION['admin_encrypt'] == '')){
-    	$messageStack->add("Error - Encryption key not set! The encryption key must be set to use the POS module.", 'error');
-    	gen_redirect(html_href_link(FILENAME_DEFAULT, '', 'SSL'));
-    }
-    if ($result->RecordCount()== 1) {
-    	return false;
-    }else{
-    	return true;
-    }
-  }
-  
+
+	/**
+	 * this function will determin if the store drop down should be build
+	 * @throws \core\classes\userException
+	 * @return bool
+	 */
+
+  	function showDropDown(){
+  		global $db;
+	  	foreach ($this->store_ids as $store){
+	  		$temp[]= $store['id'];
+	  	}
+	  	$sql = "select till_id, description from " . $this->db_table . " where store_id in (" . implode(',', $temp) . ")";
+	    $result = $db->Execute($sql);
+	    if ($result->RecordCount()== 0) throw new \core\classes\userException("Before continuing set a till for this store. This will contain default values to allow this page to work", E_USER_ERROR);// there should always be a till because of defaults values.
+	    if ($result->RecordCount()== 1) return false;
+	    return true;
+	}
+
   function default_till(){
   	global $db;
   	$sql = "select till_id from " . $this->db_table . " where store_id = '" . $_SESSION['admin_prefs']['def_store_id']."'";
     $result = $db->Execute($sql);
     return $result->fields['till_id'];
   }
-  
+
   function till_array($inc_select = false){
   	global $db;
   	foreach ($this->store_ids as $store){
@@ -246,31 +236,31 @@ class tills {
     }
     return $result_array;
   }
-  
+
   function get_till_info($till_id){
   	global $db;
   	$sql = "select * from " . $this->db_table . " where till_id = " . $till_id;
     $result = $db->Execute($sql);
     foreach ($result->fields as $key => $value) $this->$key = $value;
   }
-  
+
   function get_default_till_info(){
   	global $db;
   	$sql = "select * from " . $this->db_table . " where store_id = '" . $_SESSION['admin_prefs']['def_store_id']."'";
     $result = $db->Execute($sql);
     foreach ($result->fields as $key => $value) $this->$key = $value;
   }
-  /* 
+  /*
    * returns a string that will be a array in javascript.
    */
-  
+
   function javascript_array(){
   	global $db;
   	foreach ($this->store_ids as $store){
   		$temp[]= $store['id'];
   	}
   	$sql = "select * from " . $this->db_table . " where store_id in (" . implode(',', $temp) . ")";
-    $result = $db->Execute($sql);    
+    $result = $db->Execute($sql);
   	$js_tills  = 'var tills  = new Array();' . chr(10);
 	while (!$result->EOF){
 		$startingline = '';
@@ -296,24 +286,24 @@ class tills {
 	}
 	return $js_tills;
   }
-  
+
   function adjust_balance($amount){
   	global $db, $messageStack;
   	$sql_data_array = array('balance' => $this->balance + $amount);
   	$messageStack->debug("\n\n\n updating till balance  balance was = ".$this->balance . " adding = ". $amount." new balance = ". $this->balance + $amount."\n\n\n");
   	db_perform($this->db_table, $sql_data_array, 'update', "till_id = '" . $this->till_id . "'");
   }
-  
+
   function new_balance($amount){
   	global $db, $messageStack;
   	$sql_data_array = array('balance' => $amount);
   	$messageStack->debug("\n\n\n updating till balance  balance was = ".$this->balance . " new balance = ". $amount ."\n\n\n");
   	db_perform($this->db_table, $sql_data_array, 'update', "till_id = '" . $this->till_id . "'");
   }
-  
+
   function __destruct(){
   	//print_r($this);
   }
-  
+
 }
 ?>

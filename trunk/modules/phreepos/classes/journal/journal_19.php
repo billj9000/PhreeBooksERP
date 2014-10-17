@@ -17,8 +17,8 @@
 //  Path: /modules/phreepos/classes/journal/journal_19.php
 //
 // POS Journal
-require_once(DIR_FS_MODULES . 'phreebooks/classes/gen_ledger.php');
-class journal_19 extends journal {
+namespace phreepos\classes\journal;
+class journal_19 extends \core\classes\journal {
 	public $id					= '';
 	public $save_payment        = false;
     public $closed 				= '0';
@@ -57,12 +57,12 @@ class journal_19 extends journal {
 	public $bal_due				= 0;
 	public $shipper_code		= '';
 	public $so_po_ref_id		= '';
-    
+
     public function __construct($id = '') {
         $this->purchase_invoice_id = 'DP' . date('Ymd');
         $this->gl_acct_id = $_SESSION['admin_prefs']['def_cash_acct'] ? $_SESSION['admin_prefs']['def_cash_acct'] : AR_SALES_RECEIPTS_ACCOUNT;
 		$this->store_id	  = isset($_SESSION['admin_prefs']['def_store_id']) ? $_SESSION['admin_prefs']['def_store_id'] : 0;
-        parent::__construct($id);  
+        parent::__construct($id);
 	}
 
 	function post_ordr($action) {
@@ -70,14 +70,14 @@ class journal_19 extends journal {
 		$debit_total  = 0;
 		$credit_total = 0;
 	    $credit_total += $this->add_item_journal_rows(); // read in line items and add to journal row array
-	    $credit_total += $this->add_tax_journal_rows(); // fetch tax rates for tax calculation 
+	    $credit_total += $this->add_tax_journal_rows(); // fetch tax rates for tax calculation
 	    $debit_total  += $this->add_discount_journal_row(); // put discount into journal row array
 	    $credit_total += $this->add_rounding_journal_rows($credit_total - $debit_total);	// fetch rounding of
 	    //$this->adjust_total($credit_total - $debit_total);
 	    $this->add_payment_row();
 	    $debit_total  += $this->add_total_journal_row(); // put total value into ledger row array
 		$this->journal_main_array = $this->build_journal_main_array(); // build ledger main record
-	
+
 		// ***************************** START TRANSACTION *******************************
 		$messageStack->debug("\n  started order post purchase_invoice_id = " . $this->purchase_invoice_id . " and id = " . $this->id);
 		$db->transStart();
@@ -85,41 +85,23 @@ class journal_19 extends journal {
 		// add/update address book
 		if ($this->bill_add_update) { // billing address
 			$this->bill_acct_id = $this->add_account($this->account_type . 'b', $this->bill_acct_id, $this->bill_address_id);
-		  	if (!$this->bill_acct_id){
-				$this->fail_message('no customer was selected');
-				return false;
-			} 
+			if (!$this->bill_acct_id) throw new \core\classes\userException('no customer was selected');
 		}
 		// ************* POST journal entry *************
-		if (!$this->validate_purchase_invoice_id()) {
-			$this->fail_message('invoice number is being used in a other post');
-			return false;
-		}
-		if (!$this->Post($this->id ? 'edit' : 'insert',true)){
-			$this->fail_message('it was not posible to post the sale');
-			return false;
-		}
+		$this->validate_purchase_invoice_id();
+		$this->Post($this->id ? 'edit' : 'insert',true);
 		// ************* post-POST processing *************
-		if (!$this->increment_purchase_invoice_id()){
-			$this->fail_message('invoice number can not be incrementedt');
-			return false;
-		}
+		if (!$this->increment_purchase_invoice_id()) throw new \core\classes\userException('invoice number can not be incrementedt');
 		// cycle through the payments
 		foreach ($this->pmt_rows as $pay_method) {
-	        $pay_meth  = $pay_method['meth'];
-	        $processor = new $pay_meth;
-	        if (ENABLE_ENCRYPTION && $this->save_payment && $processor->enable_encryption !== false) {
-	            if (!$this->encrypt_payment($pay_method, $processor->enable_encryption)){
-					$this->fail_message('unable to encrypt payment');
-					return false;
-				} 
+	        $method   = $pay_method['meth'];
+	        $messageStack->debug("\n encryption =".ENABLE_ENCRYPTION." save_payment ={$this->save_payment} enable_encryption={$admin_classes['payment']->methods[$method]->enable_encryption}");
+	        if (ENABLE_ENCRYPTION && $this->save_payment && $admin_classes['payment']->methods[$method]->enable_encryption !== false) {
+	            $this->encrypt_payment($pay_method);
 	        }
-	        if ($processor->before_process()){
-				$this->fail_message('unable to process payment');
-				return false;
-			} 
-	    } 
-		$messageStack->debug("\n  committed order post purchase_invoice_id = " . $this->purchase_invoice_id . " and id = " . $this->id . "\n\n");
+	        $admin_classes['payment']->methods[$method]->before_process();
+	    }
+		$messageStack->debug("\n  committed order post purchase_invoice_id = {$this->purchase_invoice_id} and id = {$this->id}\n\n");
 		$db->transCommit();
 		// ***************************** END TRANSACTION *******************************
 		$messageStack->add('Successfully posted ' . MENU_HEADING_PHREEPOS . ' Ref # ' . $this->purchase_invoice_id, 'success');
@@ -135,7 +117,7 @@ class journal_19 extends journal {
 			'post_date'        => $this->post_date,
   		);
   	}
-  	
+
   	function add_payment_row() {
 		global $payment_modules, $messageStack;
 	  	$total = 0;
@@ -144,12 +126,13 @@ class journal_19 extends journal {
 		  		$desc   = MENU_HEADING_PHREEPOS . '-' . TEXT_PAYMENT;
 		  		$method = $this->pmt_rows[$i]['meth'];
 		  		if ($method) {
-		    		$$method    = new $method;
+		  			$pay_meth = "\payment\methods\\$method\\$method";
+		    		$$method    = new $pay_meth;
 		    		$deposit_id = $$method->def_deposit_id ? $$method->def_deposit_id : ('DP' . date('Ymd'));
 					$desc       = JOURNAL_ID . ':' . $method . ':' . $$method->payment_fields;
 					$gl_acct_id = $$method->pos_gl_acct;
 					if ($this->opendrawer == false) $this->opendrawer = $$method->open_pos_drawer;
-					$messageStack->debug("\n payment type = ".$method." gl account id = " .$gl_acct_id. " open drawer = ".$$method->open_pos_drawer); 
+					$messageStack->debug("\n payment type = ".$method." gl account id = " .$gl_acct_id. " open drawer = ".$$method->open_pos_drawer);
 		  		}
 		  		$total     += $this->pmt_rows[$i]['pmt'];
 		  		if ($total > $this->total_amount) { // change was returned, adjust amount received for post
@@ -195,11 +178,11 @@ class journal_19 extends journal {
   function add_item_journal_rows() {	// read in line items and add to journal row array
 	  $total = 0;
 	  for ($i = 0; $i < count($this->item_rows); $i++) {
-		if ($this->item_rows[$i]['pstd'] || $this->item_rows[$i]['invoice_number'] ) { // make sure the quantity line is set and not zero
+		if ($this->item_rows[$i]['pstd']) { // make sure the quantity line is set and not zero
 		  $this->journal_rows[] = array(
 			'id'                      => $this->item_rows[$i]['id'],	// retain the db id (used for updates)
 			'so_po_item_ref_id'       => 0,	// item reference id for so/po line items
-			'gl_type'                 => ($this->item_rows[$i]['invoice_number']) ? 'ipmt' : $this->gl_type,
+			'gl_type'                 => $this->gl_type,
 			'sku'                     => $this->item_rows[$i]['sku'],
 			'qty'                     => $this->item_rows[$i]['pstd'],
 			'description'             => $this->item_rows[$i]['desc'],
@@ -207,7 +190,7 @@ class journal_19 extends journal {
 			'full_price'              => $this->item_rows[$i]['full'],
 			'gl_account'              => $this->item_rows[$i]['acct'],
 			'taxable'                 => $this->item_rows[$i]['tax'],
-			'serialize_number'        => ($this->item_rows[$i]['invoice_number'])? $this->item_rows[$i]['invoice_number'] : $this->item_rows[$i]['serial'],
+			'serialize_number'        => $this->item_rows[$i]['serial'],
 			'project_id'              => $this->item_rows[$i]['proj'],
 			'post_date'               => $this->post_date,
 			'date_1'                  => '',
@@ -218,56 +201,56 @@ class journal_19 extends journal {
 	  return $total;
   }
 
-	function add_tax_journal_rows() {
-		global $currencies;
-		$total        = 0;
-		$auth_array   = array();
-		$tax_rates    = ord_calculate_tax_drop_down('b');
-		$tax_auths    = gen_build_tax_auth_array();
-		$tax_discount = $this->account_type == 'v' ? AP_TAX_BEFORE_DISCOUNT : AR_TAX_BEFORE_DISCOUNT;
-		// calculate each tax value by authority per line item
-		foreach ($this->journal_rows as $idx => $line_item) {
-		    if ($line_item['taxable'] > 0 && ($line_item['gl_type'] == $this->gl_type || $line_item['gl_type'] == 'frt')) {
-			  foreach ($tax_rates as $rate) {
-			    if ($rate['id'] == $line_item['taxable']) {
-				  $auths = explode(':', $rate['auths']);
-				  foreach ($auths as $auth) {
-				    $line_total = $line_item['debit_amount'] + $line_item['credit_amount']; // one will always be zero
-				    if (ENABLE_ORDER_DISCOUNT && $tax_discount == '0') {
-					  $line_total = $line_total * (1 - $this->disc_percent);
-				    }
-					$auth_array[$auth] += ($tax_auths[$auth]['tax_rate'] / 100) * $line_total;
-				  }
+  function add_tax_journal_rows() {
+	global $currencies;
+	  $total        = 0;
+	  $auth_array   = array();
+	  $tax_rates    = ord_calculate_tax_drop_down('b');
+	  $tax_auths    = gen_build_tax_auth_array();
+	  $tax_discount = $this->account_type == 'v' ? AP_TAX_BEFORE_DISCOUNT : AR_TAX_BEFORE_DISCOUNT;
+	  // calculate each tax value by authority per line item
+	  foreach ($this->journal_rows as $idx => $line_item) {
+	    if ($line_item['taxable'] > 0 && ($line_item['gl_type'] == $this->gl_type || $line_item['gl_type'] == 'frt')) {
+		  foreach ($tax_rates as $rate) {
+		    if ($rate['id'] == $line_item['taxable']) {
+			  $auths = explode(':', $rate['auths']);
+			  foreach ($auths as $auth) {
+			    $line_total = $line_item['debit_amount'] + $line_item['credit_amount']; // one will always be zero
+			    if (ENABLE_ORDER_DISCOUNT && $tax_discount == '0') {
+				  $line_total = $line_total * (1 - $this->disc_percent);
 			    }
+				$auth_array[$auth] += ($tax_auths[$auth]['tax_rate'] / 100) * $line_total;
 			  }
 		    }
+		  }
+	    }
+	  }
+	  // calculate each tax total by authority and put into journal row array
+	  foreach ($auth_array as $auth => $auth_tax_collected) {
+		if ($auth_tax_collected == '' && $tax_auths[$auth]['account_id'] == '') continue;
+	  	if( ROUND_TAX_BY_AUTH == true ){
+			$amount = number_format($auth_tax_collected, $currencies->currencies[DEFAULT_CURRENCY]['decimal_places'], '.', '');
+		}else {
+			$amount = $auth_tax_collected;
 		}
-		// calculate each tax total by authority and put into journal row array
-		foreach ($auth_array as $auth => $auth_tax_collected) {
-			if ($auth_tax_collected == '' && $tax_auths[$auth]['account_id'] == '') continue;
-		  	if( ROUND_TAX_BY_AUTH == true ){
-				$amount = number_format($auth_tax_collected, $currencies->currencies[DEFAULT_CURRENCY]['decimal_places'], '.', '');
-			}else {
-				$amount = $auth_tax_collected;
-			} 
-		    $this->journal_rows[] = array( // record for specific tax authority
-			  'qty'                     => '1',
-			  'gl_type'                 => 'tax',		// code for tax entry
-			  'credit_amount' 			=> $amount,
-			  'description'             => $tax_auths[$auth]['description_short'],
-			  'gl_account'              => $tax_auths[$auth]['account_id'],
-			  'post_date'               => $this->post_date,
-		    );
-		    $total += $amount;
-		}
-		return $total;
-	}
+	    $this->journal_rows[] = array( // record for specific tax authority
+		  'qty'                     => '1',
+		  'gl_type'                 => 'tax',		// code for tax entry
+		  'credit_amount' 			=> $amount,
+		  'description'             => $tax_auths[$auth]['description_short'],
+		  'gl_account'              => $tax_auths[$auth]['account_id'],
+		  'post_date'               => $this->post_date,
+	    );
+	    $total += $amount;
+	  }
+	  return $total;
+  }
 
   // this function adjusts the posted total to the calculated one to take into account fractions of a cent
   function adjust_total($amount) {
 	if ($this->total_amount == $amount) $this->total_amount = $amount;
   }
-  
+
   function add_rounding_journal_rows($amount) { // put rounding into journal row array
 	global $messageStack, $currencies;
 	if((float)(string)$this->total_amount == (float)(string) $amount) return ;
@@ -287,32 +270,8 @@ class journal_19 extends journal {
 	}
 	return $this->rounding_amt;
   }
-  
-  //this class is only used for ajax posting that is why error's will be returned in a string.
-  function fail_message($message) {
-	global $db, $messageStack;
-	$db->transRollback();
-	$this->errormsg = $message;
-	$messageStack->add($message, 'error');
-	return false;
-  }
 
-  function session_message($message, $level = 'error') {
-	$this->errormsg = $message;
-  }
-  function printSelf(){
-  	global $messageStack;
-  	$messageStack->add(var_dump($this));
-  }
-  
-  	function __destruct(){
-  		global $messageStack;
-		if ( DEBUG ) $messageStack->write_debug();
-	}
-  
 	function encrypt_payment($method) {
-  		global $messageStack;	
-	  	$encrypt = new encryption();
 	  	$cc_info = array();
 	  	$cc_info['name']    = $method['f0'];
 	  	$cc_info['number']  = $method['f1'];
@@ -321,7 +280,7 @@ class journal_19 extends journal {
 	  	$cc_info['cvv2']    = $method['f4'];
 	  	$cc_info['alt1']    = $method['f5'];
 	  	$cc_info['alt2']    = $method['f6'];
-	  	if (!$enc_value = $encrypt->encrypt_cc($cc_info)) return false;
+	  	\core\classes\encryption::encrypt_cc($cc_info);
 	  	$payment_array = array(
 		  'hint'      => $enc_value['hint'],
 		  'module'    => 'contacts',

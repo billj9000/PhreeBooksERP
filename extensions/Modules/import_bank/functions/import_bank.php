@@ -2,7 +2,7 @@
 // +-----------------------------------------------------------------+
 // |                   PhreeBooks Open Source ERP                    |
 // +-----------------------------------------------------------------+
-// | Copyright(c) 2008-2013 PhreeSoft, LLC (www.PhreeSoft.com)       |
+// | Copyright(c) 2008-2014 PhreeSoft      (www.PhreeSoft.com)       |
 // +-----------------------------------------------------------------+
 // | This program is free software: you can redistribute it and/or   |
 // | modify it under the terms of the GNU General Public License as  |
@@ -88,14 +88,15 @@ function bank_import_csv($structure, $filename, $bank_gl_acct) {
 	  		}
 		}
   	}
-  	if (!$bankimport->update_chart_history_periods($bankimport->first_period)){
-  		$db->transRollback();
-  		$messageStack->add("Chart of accounts are out of balance. When we try to import the file");
-  		$messageStack->write_debug();
+  	if ( $countline <> 0 ) {
+  		if (!$bankimport->update_chart_history_periods($bankimport->first_period)){
+  			$db->transRollback();
+  			$messageStack->add("Chart of accounts are out of balance. When we try to import the file\n Removed the journals. Please try to import again when balances are fine.");
+  		}else{
+  			$db->transCommit();
+  			$messageStack->add("succesfully posted $countline number of lines",'caution');
+  		}
   	}
-  	$db->transCommit();
-  	if ( $countline <> 0 ) $messageStack->add("succesfully posted $countline number of lines",'caution');
   	$messageStack->write_debug();
-  
 }
 ?>

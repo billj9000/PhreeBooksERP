@@ -16,7 +16,7 @@
 // +-----------------------------------------------------------------+
 //  Path: /modules/phreepos/custom/classes/pos_builder.php
 //
-
+namespace phreepos\classes;
 require_once(DIR_FS_MODULES . 'phreebooks/functions/phreebooks.php');
 
 class pos_builder {
@@ -32,7 +32,7 @@ class pos_builder {
 
   function load_query_results($tableKey = 'id', $tableValue = 0) {
 	global $db, $report, $FieldListings;
-	if (!$tableValue) return false;
+	if (!$tableValue) throw new \core\classes\userException("tableValue is empty");
 	$sql = "select * from " . TABLE_JOURNAL_MAIN . " where id = " . $tableValue;
 	$result = $db->Execute($sql);
 	while (list($key, $value) = each($result->fields)) $this->$key = db_prepare_input($value);

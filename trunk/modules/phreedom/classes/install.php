@@ -2,7 +2,7 @@
 // +-----------------------------------------------------------------+
 // |                   PhreeBooks Open Source ERP                    |
 // +-----------------------------------------------------------------+
-// | Copyright(c) 2008-2013 PhreeSoft, LLC (www.PhreeSoft.com)       |
+// | Copyright(c) 2008-2014 PhreeSoft      (www.PhreeSoft.com)       |
 // +-----------------------------------------------------------------+
 // | This program is free software: you can redistribute it and/or   |
 // | modify it under the terms of the GNU General Public License as  |
@@ -23,7 +23,7 @@ class phreedom_admin {
 	public $keys			= array();// Load configuration constants for this module, must match entries in admin tabs
 	public $dirlist			= array();// add new directories to store images and data
 	public $tables			= array();// Load tables
-	
+
   function __construct() {
 	// Load configuration constants for this module, must match entries in admin tabs
     $this->keys = array(
@@ -66,6 +66,7 @@ class phreedom_admin {
 	  'EMAIL_SMTPAUTH_PASSWORD'    => '',
 	  'EMAIL_SMTPAUTH_MAIL_SERVER' => '',
 	  'EMAIL_SMTPAUTH_MAIL_SERVER_PORT' => '25',
+      'EMAIL_SMTPAUTH_TLS'         => '0',
 	  'CURRENCIES_TRANSLATIONS'    => '&pound;,?:&euro;,?',
       'DATE_FORMAT'                => 'm/d/Y', // this is used for date(), use only values: Y, m and d (case sensitive)
       'DATE_DELIMITER'             => '/', // must match delimiter used in DATE_FORMAT
@@ -202,7 +203,7 @@ class phreedom_admin {
 	  $currency->btn_update();
 	}
 	// Fix for change to audit log for upgrade to R3.6 causes perpertual crashing when writing audit log
-	if (!db_field_exists(TABLE_AUDIT_LOG, 'stats')) $db->Execute("ALTER TABLE ".TABLE_AUDIT_LOG." ADD `stats` VARCHAR(32) NOT NULL AFTER `ip_address`");
+	if (!db_field_exists(TABLE_AUDIT_LOG, 'stats')) $db->Execute("ALTER TABLE ".TABLE_AUDIT_LOG." ADD stats VARCHAR(32) NOT NULL AFTER ip_address");
 	// load installed modules and initialize them
 	if (is_array($loaded_modules)) foreach ($loaded_modules as $module) {
 	  if ($module == 'phreedom') continue; // skip this module
@@ -225,17 +226,17 @@ class phreedom_admin {
 	    $versions = xml_to_object($revisions);
 		$latest  = $versions->Revisions->Phreedom->Current;
 		$current = MODULE_PHREEDOM_VERSION;
-		if ($latest > $current) $messageStack->add_session(sprintf(TEXT_VERSION_CHECK_NEW_VER, $current, $latest), 'caution'); 
+		if ($latest > $current) $messageStack->add_session(sprintf(TEXT_VERSION_CHECK_NEW_VER, $current, $latest), 'caution');
 		foreach ($loaded_modules as $mod) { // check rest of modules
 		  if ($mod == 'phreedom') continue; // skip this module
 		  $latest  = $versions->Revisions->Modules->$mod->Current;
 		  $current = constant('MODULE_' . strtoupper($mod) . '_VERSION');
-		  if ($latest > $current) $messageStack->add_session(sprintf(TEXT_VERSION_CHECK_NEW_MOD_VER, $mod, $current, $latest), 'caution'); 
+		  if ($latest > $current) $messageStack->add_session(sprintf(TEXT_VERSION_CHECK_NEW_MOD_VER, $mod, $current, $latest), 'caution');
 		}
 	  }
     }
 	// Make sure the install directory has been moved/removed
-	if (is_dir(DIR_FS_ADMIN . 'install')) $messageStack->add_session(TEXT_INSTALL_DIR_PRESENT, 'caution'); 
+	if (is_dir(DIR_FS_ADMIN . 'install')) $messageStack->add_session(TEXT_INSTALL_DIR_PRESENT, 'caution');
   }
 
   function update($module) {
@@ -263,13 +264,13 @@ class phreedom_admin {
   	if (MODULE_PHREEDOM_STATUS < 3.5) {
 	  if (!db_field_exists(TABLE_EXTRA_FIELDS, 'group_by'))  $db->Execute("ALTER TABLE ".TABLE_EXTRA_FIELDS." ADD group_by varchar(64) NOT NULL default ''");
 	  if (!db_field_exists(TABLE_EXTRA_FIELDS, 'sort_order'))$db->Execute("ALTER TABLE ".TABLE_EXTRA_FIELDS." ADD sort_order varchar(64) NOT NULL default ''");
-	  if (!db_field_exists(TABLE_AUDIT_LOG, 'stats'))        $db->Execute("ALTER TABLE ".TABLE_AUDIT_LOG." ADD `stats` VARCHAR(32) NOT NULL AFTER `ip_address`");
+	  if (!db_field_exists(TABLE_AUDIT_LOG, 'stats'))        $db->Execute("ALTER TABLE ".TABLE_AUDIT_LOG." ADD stats VARCHAR(32) NOT NULL AFTER ip_address");
   	}
   	if (MODULE_PHREEDOM_STATUS < 3.7) {
-  		$db->Execute("ALTER TABLE ".TABLE_AUDIT_LOG." CHANGE `amount` `amount` DOUBLE NOT NULL DEFAULT '0'");
-  		$db->Execute("ALTER TABLE ".TABLE_CURRENCIES." CHANGE `value` `value` DOUBLE NOT NULL DEFAULT '0'");
+  		$db->Execute("ALTER TABLE ".TABLE_AUDIT_LOG." CHANGE amount amount DOUBLE NOT NULL DEFAULT '0'");
+  		$db->Execute("ALTER TABLE ".TABLE_CURRENCIES." CHANGE value value DOUBLE NOT NULL DEFAULT '0'");
   	}
-  	 
+
     if (!$error) {
 	  write_configure('MODULE_' . strtoupper($module) . '_STATUS', constant('MODULE_' . strtoupper($module) . '_VERSION'));
    	  $messageStack->add(sprintf(GEN_MODULE_UPDATE_SUCCESS, $module, constant('MODULE_' . strtoupper($module) . '_VERSION')), 'success');
