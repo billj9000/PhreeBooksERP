@@ -2,7 +2,7 @@
 // +-----------------------------------------------------------------+
 // |                   PhreeBooks Open Source ERP                    |
 // +-----------------------------------------------------------------+
-// | Copyright(c) 2008-2013 PhreeSoft, LLC (www.PhreeSoft.com)       |
+// | Copyright(c) 2008-2014 PhreeSoft      (www.PhreeSoft.com)       |
 // +-----------------------------------------------------------------+
 // | This program is free software: you can redistribute it and/or   |
 // | modify it under the terms of the GNU General Public License as  |
@@ -18,11 +18,11 @@
 //
 
 ?>
-<div title="<?php echo TEXT_GENERAL;?>" id="general">
+<div id="general" class="tabset_content">
   <h2 class="tabset_label"><?php echo TEXT_PHREEPOS_SETTINGS; ?></h2>
   <fieldset class="formAreaTitle">
-	<table>
-	  <tr><th colspan="2"><?php echo MENU_HEADING_CONFIG; ?></th></tr>
+	<table align="center">
+	  <tr><th colspan="2"><?php echo MENU_HEADING_CONFIG; ?></th></tr> 
 	  <tr>
 		<td><?php echo PHREEPOS_REQUIRE_ADDRESS_DESC; ?></td>
 		<td><?php echo html_pull_down_menu('phreepos_require_address', $sel_yes_no, $_POST['phreepos_require_address'] ? $_POST['phreepos_require_address'] : PHREEPOS_REQUIRE_ADDRESS, ''); ?></td>

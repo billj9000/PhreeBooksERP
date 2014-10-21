@@ -2,7 +2,7 @@
 // +-----------------------------------------------------------------+
 // |                   PhreeBooks Open Source ERP                    |
 // +-----------------------------------------------------------------+
-// | Copyright(c) 2008-2013 PhreeSoft, LLC (www.PhreeSoft.com)       |
+// | Copyright(c) 2008-2014 PhreeSoft      (www.PhreeSoft.com)       |
 // +-----------------------------------------------------------------+
 // | This program is free software: you can redistribute it and/or   |
 // | modify it under the terms of the GNU General Public License as  |
@@ -16,23 +16,27 @@
 // +-----------------------------------------------------------------+
 //  Path: /modules/phreepos/classes/other_transactions.php
 //
-namespace phreepos\classes;
+
 class other_transactions {
 	public $code        	= 'other_transactions'; // needs to match class name
     public $db_table     	= TABLE_PHREEPOS_OTHER_TRANSACTIONS;
     public $help_path   	= '';
-
+    public $error       	= false;
+    
     public function __construct(){
-         $this->security_id           = \core\classes\user::validate(SECURITY_ID_CONFIGURATION);
+         $this->security_id           = $_SESSION['admin_security'][SECURITY_ID_CONFIGURATION];
          foreach ($_POST as $key => $value) $this->$key = db_prepare_input($value);
          $this->id = isset($_POST['sID'])? $_POST['sID'] : $_GET['sID'];
          $this->store_ids = gen_get_store_ids();
     }
 
   	function btn_save($id = '') {
-  		global $db;
-		\core\classes\user::validate_security($this->security_id, 2);
-		if ($this->gl_acct_id == '') throw new \core\classes\userException(GL_SELECT_STD_CHART);
+  		global $db, $messageStack, $currencies;
+		validate_security($this->security_id, 2);
+		if ($this->gl_acct_id == ''){
+			$messageStack->add(GL_SELECT_STD_CHART,'error');
+			return false;
+		}
 		$sql_data_array = array(
 			'description' 		    => $this->description,
 			'till_id'    		    => $this->till_id,
@@ -52,8 +56,8 @@ class other_transactions {
   	}
 
   	function btn_delete($id = 0) {
-  		global $db;
-  		\core\classes\user::validate_security($this->security_id, 4);
+  		global $db, $messageStack;
+  		validate_security($this->security_id, 4);
 		// 	OK to delete
 		$result = $db->Execute("select description from " . $this->db_table . " where ot_id = '" . $id . "'");
 		$db->Execute("delete from " . $this->db_table . " where ot_id = '" . $id . "'");
@@ -62,7 +66,7 @@ class other_transactions {
   	}
 
   	function build_main_html() {
-  		global $db, $currencies;
+  		global $db, $messageStack, $currencies;
   		require_once(DIR_FS_MODULES . 'phreepos/defaults.php');
     	$content = array();
 		$content['thead'] = array(
@@ -78,7 +82,7 @@ class other_transactions {
 	  		$content['tbody'][$rowCnt] = array(
 	    		array('value' => htmlspecialchars($result->fields['description']),
 			  		  'params'=> 'style="cursor:pointer" onclick="loadPopUp(\''.$this->code.'_edit\',\''.$result->fields['ot_id'].'\')"'),
-				array('value' => htmlspecialchars($result->fields['store_id']),
+				array('value' => htmlspecialchars($result->fields['store_id']), 
 					  'params'=> 'style="cursor:pointer" onclick="loadPopUp(\''.$this->code.'_edit\',\''.$result->fields['ot_id'].'\')"'),
 				array('value' => gen_get_type_description(TABLE_CHART_OF_ACCOUNTS, $result->fields['gl_acct_id']),
 			  		  'params'=> 'style="cursor:pointer" onclick="loadPopUp(\''.$this->code.'_edit\',\''.$result->fields['ot_id'].'\')"'),
@@ -95,18 +99,19 @@ class other_transactions {
 
 	function build_form_html($action, $id = '') {
     	global $db, $currencies;
+    	require_once(DIR_FS_MODULES . 'phreepos/classes/tills.php');
     	require_once(DIR_FS_MODULES . 'phreepos/defaults.php');
-    	if ($action <> 'new') {
+    	if ($action <> 'new' && $this->error == false) {
         	$sql = "select * from " . $this->db_table . " where ot_id = " . $id;
         	$result = $db->Execute($sql);
         	foreach ($result->fields as $key => $value) $this->$key = $value;
 		}
-		$tills = new \phreepos\classes\tills();
+		$tills = new tills();
 		$output = "<script type='text/javascript'>
 						$(document).ready(function(){
 							changeOfType();
 						});
-
+		
 						function changeOfType(){
 							var elt = document.getElementById('type');
 							if(elt.options[elt.selectedIndex].value == 'expenses'){
@@ -134,8 +139,8 @@ class other_transactions {
 			$output .= '    <td>' . TEXT_TILLS . '</td>' . chr(10);
 			$output .= '    <td>' . html_pull_down_menu('till_id', $tills->till_array() , $this->till_id ? $this->till_id : $tills->default_till()) . '</td>' . chr(10);
     		$output .= '  </tr>' . chr(10);
-  		}else{
-			$output .=	html_hidden_field('till_id', $tills->default_till());
+  		}else{ 
+			$output .=	html_hidden_field('till_id', $tills->default_till()); 
 		}
 	    //type change cash or expences.
     	$output .= '  <tr>' . chr(10);
@@ -161,21 +166,21 @@ class other_transactions {
 		$output .= '    <td>' . html_pull_down_menu('taxable', inv_calculate_tax_drop_down('v',false), $this->taxable) . '</td>' . chr(10);
 	    $output .= '  </tr>' . chr(10);
     	$output .= '  <tr>' . chr(10);
-
+	
 		$output .= '  </tbody>' . chr(10);
     	$output .= '</table>' . chr(10);
     	return $output;
   	}
-
-
-  /*
+  
+  	
+  /* 
    * returns a string that will be a array in javascript.
    */
-
+  
 	function javascript_array(){
   		global $db;
 	  	$sql = "select * from " . $this->db_table ;
-    	$result = $db->Execute($sql);
+    	$result = $db->Execute($sql);    
 	  	$js_tills  = 'var ot_options  = new Array();' . chr(10);
   		$i = 0;
 		while (!$result->EOF){
@@ -185,17 +190,17 @@ class other_transactions {
 		}
 		return $js_tills;
   	}
-
+  	
   	function get_transaction_info($id){
   		global $db;
   		$sql = "select * from " . $this->db_table . " where ot_id = " . $id;
         $result = $db->Execute($sql);
         foreach ($result->fields as $key => $value) $this->$key = $value;
   	}
-
+  	
   	function __destruct(){
   		//print_r($this);
   	}
-
+  
 }
 ?>

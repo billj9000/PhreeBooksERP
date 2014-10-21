@@ -2,7 +2,7 @@
 // +-----------------------------------------------------------------+
 // |                   PhreeBooks Open Source ERP                    |
 // +-----------------------------------------------------------------+
-// | Copyright(c) 2008-2013 PhreeSoft, LLC (www.PhreeSoft.com)       |
+// | Copyright(c) 2008-2014 PhreeSoft      (www.PhreeSoft.com)       |
 // +-----------------------------------------------------------------+
 // | This program is free software: you can redistribute it and/or   |
 // | modify it under the terms of the GNU General Public License as  |
@@ -16,16 +16,15 @@
 // +-----------------------------------------------------------------+
 //  Path: /modules/phreepos/dashboards/pos_this_week/pos_this_week.php
 //
-namespace phreepos\dashboards\pos_this_week;
-class pos_this_week extends \core\classes\ctl_panel {
-	public $id			 		= 'pos_this_week';
+
+class pos_this_week extends ctl_panel {
+	public $dashboard_id 		= 'pos_this_week';
 	public $description	 		= CP_POS_THIS_WEEK_DESCRIPTION;
 	public $security_id  		= SECURITY_ID_POS_MGR;
-	public $text		 		= CP_POS_THIS_WEEK_TITLE;
-	public $version      		= '3.5';
-	public $module_id 			= 'phreepos';
+	public $title		 		= CP_POS_THIS_WEEK_TITLE;
+	public $version      		= 3.5;
 
-	function output($params) {
+	function Output($params) {
 		global $db, $currencies;
 		$contents = '';
 		$control  = '';

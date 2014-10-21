@@ -2,7 +2,7 @@
 // +-----------------------------------------------------------------+
 // |                   PhreeBooks Open Source ERP                    |
 // +-----------------------------------------------------------------+
-// | Copyright(c) 2008-2013 PhreeSoft, LLC (www.PhreeSoft.com)       |
+// | Copyright(c) 2008-2014 PhreeSoft      (www.PhreeSoft.com)       |
 // +-----------------------------------------------------------------+
 // | This program is free software: you can redistribute it and/or   |
 // | modify it under the terms of the GNU General Public License as  |
@@ -17,9 +17,9 @@
 //  Path: /modules/phreepos/pages/admin/template_tab_stats.php
 //
 ?>
-<div title="<?php echo TEXT_STATISTICS;?>" id="tab_stats">
+<div id="tab_stats">
 <?php 
-  if (sizeof($admin_classes['phreepos']->tables) > 0) {
+  if (sizeof($install->tables) > 0) {
     echo "  <fieldset><!-- db table stats -->\n";
     echo "    <legend>" . TEXT_TABLE_STATS . "</legend>\n";
     echo "    <table class=\"ui-widget\" style=\"border-style:none;width:100%\">\n";
@@ -34,7 +34,7 @@
     echo "        </tr>\n";
     echo "      </thead>\n";
     echo "      <tbody class=\"ui-widget-content\">\n";
-    foreach ($admin_classes['phreepos']->tables as $tablename => $tablesql) {
+    foreach ($install->tables as $tablename => $tablesql) {
 	  $result = $db->Execute("SHOW TABLE STATUS LIKE '" . $tablename ."'");
 	  echo "         <tr>\n";
 	  echo "          <td>" . $result->fields['Name'] . "</td>\n";

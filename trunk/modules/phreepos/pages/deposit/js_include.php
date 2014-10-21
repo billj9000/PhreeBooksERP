@@ -2,7 +2,7 @@
 // +-----------------------------------------------------------------+
 // |                   PhreeBooks Open Source ERP                    |
 // +-----------------------------------------------------------------+
-// | Copyright(c) 2008-2013 PhreeSoft, LLC (www.PhreeSoft.com)       |
+// | Copyright(c) 2008-2014 PhreeSoft      (www.PhreeSoft.com)       |
 // +-----------------------------------------------------------------+
 // | This program is free software: you can redistribute it and/or   |
 // | modify it under the terms of the GNU General Public License as  |
@@ -27,7 +27,7 @@ var add_array          = new Array("<?php echo implode('", "', $js_arrays['field
 var default_array      = new Array("<?php echo implode('", "', $js_arrays['text']); ?>");
 var journalID          = '<?php echo JOURNAL_ID; ?>';
 var account_type       = '<?php echo $type; ?>';
-var payments_installed = <?php echo count($admin_classes['payment']->methods) ? 'true' : 'false'; ?>;
+var payments_installed = <?php echo count($payment_modules) ? 'true' : 'false'; ?>;
 <?php echo js_calendar_init($cal_bills); ?>
 
 // List the gl accounts for line item pull downs
@@ -67,14 +67,15 @@ function check_form() {
     var index = document.getElementById('shipper_code').selectedIndex;
     var payment_method = document.getElementById('shipper_code').options[index].value;
 	<?php
-	  foreach ($admin_classes['payment']->methods as $method) { // fetch the javascript validation of payments module
-		if($method->installed) echo $method->javascript_validation();
+	  foreach ($payment_modules as $pmt_class) { // fetch the javascript validation of payments module
+		$value = $pmt_class['id'];
+		echo $$value->javascript_validation();
 	  }
 	?>
   }
 
   if (error == 1) {
-	$.messager.alert('error',error_message,'error');
+    alert(error_message);
     return false;
   }
   return true;
@@ -140,7 +141,7 @@ function loadNewBalance() { // request funtion
     url: 'index.php?module=phreebooks&page=ajax&op=acct_balance&gl_acct_id='+gl_acct+'&post_date='+post_date,
     dataType: ($.browser.msie) ? "text" : "xml",
     error: function(XMLHttpRequest, textStatus, errorThrown) {
-    	$.messager.alert("Ajax Error ", XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown, "error");
+      alert ("Ajax Error: " + XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown);
     },
 	success: showNewBalance
   });
@@ -165,7 +166,7 @@ function ajaxOrderData(cID, oID, jID, open_order, ship_only) {
     url: 'index.php?module=contacts&page=ajax&op=load_contact&cID='+cID,
     dataType: ($.browser.msie) ? "text" : "xml",
     error: function(XMLHttpRequest, textStatus, errorThrown) {
-    	$.messager.alert("Ajax Error ", XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown, "error");
+      alert ("Ajax Error: " + XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown);
     },
 	success: fillOrderData
   });
@@ -220,7 +221,7 @@ function loadNewPayment() { // request funtion
     url: 'index.php?module=phreebooks&page=ajax&op=stored_payments&contact_id='+contact_id,
     dataType: ($.browser.msie) ? "text" : "xml",
     error: function(XMLHttpRequest, textStatus, errorThrown) {
-    	$.messager.alert("Ajax Error ", XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown, "error");
+      alert ("Ajax Error: " + XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown);
     },
 	success: showNewPayment
   });

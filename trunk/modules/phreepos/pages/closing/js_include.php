@@ -2,7 +2,7 @@
 // +-----------------------------------------------------------------+
 // |                   PhreeBooks Open Source ERP                    |
 // +-----------------------------------------------------------------+
-// | Copyright(c) 2008-2013 PhreeSoft, LLC (www.PhreeSoft.com)       |
+// | Copyright(c) 2008-2014 PhreeSoft      (www.PhreeSoft.com)       |
 // +-----------------------------------------------------------------+
 // | This program is free software: you can redistribute it and/or   |
 // | modify it under the terms of the GNU General Public License as  |
@@ -29,7 +29,7 @@ var currencyCnt = <?php echo sizeof($currencies->currencies); ?>;
 <?php echo js_calendar_init($cal_gl); ?>
 
 function init() {
-	<?php if (!empty($combined_list) ) echo 'updateBalance();';?>
+	updateBalance();
 }
 
 function check_form() {
@@ -37,7 +37,7 @@ function check_form() {
   var error_message = "<?php echo JS_ERROR; ?>";
 
   if (error == 1) {
-	$.messager.alert('error',error_message,'error');
+    alert(error_message);
     return false;
   }
   return true;

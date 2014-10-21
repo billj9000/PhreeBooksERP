@@ -2,7 +2,7 @@
 // +-----------------------------------------------------------------+
 // |                   PhreeBooks Open Source ERP                    |
 // +-----------------------------------------------------------------+
-// | Copyright(c) 2008-2013 PhreeSoft, LLC (www.PhreeSoft.com)       |
+// | Copyright(c) 2008-2014 PhreeSoft      (www.PhreeSoft.com)       |
 // +-----------------------------------------------------------------+
 // | This program is free software: you can redistribute it and/or   |
 // | modify it under the terms of the GNU General Public License as  |
@@ -16,7 +16,7 @@
 // +-----------------------------------------------------------------+
 //  Path: /modules/phreepos/custom/classes/pos_builder.php
 //
-namespace phreepos\classes;
+
 require_once(DIR_FS_MODULES . 'phreebooks/functions/phreebooks.php');
 
 class pos_builder {
@@ -32,7 +32,7 @@ class pos_builder {
 
   function load_query_results($tableKey = 'id', $tableValue = 0) {
 	global $db, $report, $FieldListings;
-	if (!$tableValue) throw new \core\classes\userException("tableValue is empty");
+	if (!$tableValue) return false;
 	$sql = "select * from " . TABLE_JOURNAL_MAIN . " where id = " . $tableValue;
 	$result = $db->Execute($sql);
 	while (list($key, $value) = each($result->fields)) $this->$key = db_prepare_input($value);

@@ -2,7 +2,7 @@
 // +-----------------------------------------------------------------+
 // |                   PhreeBooks Open Source ERP                    |
 // +-----------------------------------------------------------------+
-// | Copyright(c) 2008-2013 PhreeSoft, LLC (www.PhreeSoft.com)       |
+// | Copyright(c) 2008-2014 PhreeSoft      (www.PhreeSoft.com)       |
 // +-----------------------------------------------------------------+
 // | This program is free software: you can redistribute it and/or   |
 // | modify it under the terms of the GNU General Public License as  |
@@ -17,8 +17,8 @@
 //  Path: /modules/phreepos/classes/journal/journal_21.php
 //
 // Inventory Direct Purchase Journal (POP)
-namespace phreepos\classes\journal;
-class journal_21 extends \core\classes\journal {
+require_once(DIR_FS_MODULES . 'phreebooks/classes/gen_ledger.php');
+class journal_21 extends journal {
 	public $id					= '';
 	public $save_payment        = false;
     public $closed 				= '0';
@@ -57,13 +57,13 @@ class journal_21 extends \core\classes\journal {
 	public $bal_due				= 0;
 	public $shipper_code		= '';
 	public $so_po_ref_id		= '';
-
+    
     public function __construct($id = '') {
     	global $db;
         $result = $db->Execute("select next_check_num from " . TABLE_CURRENT_STATUS);
-        $this->purchase_invoice_id = $result->fields['next_check_num'];
+        $this->purchase_invoice_id = $result->fields['next_check_num'];     
         $this->gl_acct_id          = $_SESSION['admin_prefs']['def_cash_acct'] ? $_SESSION['admin_prefs']['def_cash_acct'] : AP_PURCHASE_INVOICE_ACCOUNT;
-		parent::__construct($id);
+		parent::__construct($id);    
 	}
 
 	function post_ordr($action) {
@@ -72,12 +72,12 @@ class journal_21 extends \core\classes\journal {
 		$credit_total = 0;
 	    $debit_total  += $this->add_item_journal_rows(); // read in line items and add to journal row array
 	    $debit_total  += $this->add_tax_journal_rows();  // fetch tax rates for tax calculation
-		$credit_total += $this->add_discount_journal_row(); // put discount into journal row array
-		$debit_total  += $this->add_rounding_journal_rows($credit_total - $debit_total);	// fetch rounding of
+		$credit_total += $this->add_discount_journal_row(); // put discount into journal row array		
+		$debit_total  += $this->add_rounding_journal_rows($credit_total - $debit_total);	// fetch rounding of  
 	    //$this->adjust_total($debit_total - $credit_total);
 	    $credit_total += $this->add_total_journal_row();    // put total value into ledger row array
 		$this->journal_main_array = $this->build_journal_main_array(); // build ledger main record
-
+	
 		// ***************************** START TRANSACTION *******************************
 		$messageStack->debug("\n  started order post purchase_invoice_id = " . $this->purchase_invoice_id . " and id = " . $this->id);
 		$db->transStart();
@@ -85,13 +85,29 @@ class journal_21 extends \core\classes\journal {
 		// add/update address book
 		if ($this->bill_add_update) { // billing address
 			$this->bill_acct_id = $this->add_account($this->account_type . 'b', $this->bill_acct_id, $this->bill_address_id);
-			if (!$this->bill_acct_id) throw new \core\classes\userException('no customer was selected');
+			if (!$this->bill_acct_id){
+				$messageStack->add('no customer was selected', 'error');
+				$db->transRollback();
+				return false;
+			} 
 		}
 		// ************* POST journal entry *************
-		$this->validate_purchase_invoice_id();
-		$this->Post($this->id ? 'edit' : 'insert',true);
+		if (!$this->validate_purchase_invoice_id()) {
+			$messageStack->add('invoice number is being used in a other post', 'error');
+			$db->transRollback();
+			return false;
+		}
+		if (!$this->Post($this->id ? 'edit' : 'insert',true)){
+			$messageStack->add('it was not posible to post the sale', 'error');
+			$db->transRollback();
+			return false;
+		}
 		// ************* post-POST processing *************
-		$this->increment_purchase_invoice_id();
+		if (!$this->increment_purchase_invoice_id()){
+			$messageStack->add('invoice number can not be incrementedt', 'error');
+			$db->transRollback();
+			return false;
+		}
 		$messageStack->debug("\n  committed order post purchase_invoice_id = " . $this->purchase_invoice_id . " and id = " . $this->id . "\n\n");
 		$db->transCommit();
 		// ***************************** END TRANSACTION *******************************
@@ -99,15 +115,15 @@ class journal_21 extends \core\classes\journal {
 		return true;
 	}
 
-  	function refund_ordr() {
-    	global $db, $messageStack;
-    	// *************** START TRANSACTION *************************
-    	$db->transStart();
-    	$this->unPost('delete');
-   		$db->transCommit();
-    	// *************** END TRANSACTION *************************
-    	return true;
-  	}
+  function refund_ordr() {
+    global $db, $messageStack;
+    // *************** START TRANSACTION *************************
+    $db->transStart();
+    if (!$this->unPost('delete')) return false;
+    $db->transCommit();
+    // *************** END TRANSACTION *************************
+    return true;
+  }
 
   function add_total_journal_row() {
 	global $payment_modules;
@@ -117,8 +133,7 @@ class journal_21 extends \core\classes\journal {
 		  $desc = MENU_HEADING_PHREEPOS . '-' . TEXT_TOTAL;
 		  $method     = $this->pmt_rows[$i]['meth'];
 		  if ($method) {
-		    $pay_meth = "\payment\methods\\$method\\$method";
-		    $$method    = new $pay_meth;
+		    $$method    = new $method;
 		    $deposit_id = $$method->def_deposit_id ? $$method->def_deposit_id : ('DP' . date('Ymd'));
 			$desc = JOURNAL_ID . ':' . $method . ':' . $$method->payment_fields;
 		  }
@@ -213,7 +228,7 @@ class journal_21 extends \core\classes\journal {
 			$amount = number_format($auth_tax_collected, $currencies->currencies[DEFAULT_CURRENCY]['decimal_places'], '.', '');
 		}else {
 			$amount = $auth_tax_collected;
-		}
+		} 
 	    $this->journal_rows[] = array( // record for specific tax authority
 		  'qty'                     => '1',
 		  'gl_type'                 => 'tax',		// code for tax entry
@@ -231,7 +246,7 @@ class journal_21 extends \core\classes\journal {
   function adjust_total($amount) {
 	if ($this->total_amount == $amount) $this->total_amount = $amount;
   }
-
+  
   function add_rounding_journal_rows($amount) { // put rounding into journal row array
 	global $messageStack, $currencies;
 	if((float)(string)$this->total_amount == (float)(string) $amount) return ;
@@ -251,6 +266,6 @@ class journal_21 extends \core\classes\journal {
 	}
 	return $this->rounding_amt;
   }
-
+  
 }
 ?>

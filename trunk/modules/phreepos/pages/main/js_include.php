@@ -2,7 +2,7 @@
 // +-----------------------------------------------------------------+
 // |                   PhreeBooks Open Source ERP                    |
 // +-----------------------------------------------------------------+
-// | Copyright(c) 2008-2013 PhreeSoft, LLC (www.PhreeSoft.com)       |
+// | Copyright(c) 2008-2014 PhreeSoft      (www.PhreeSoft.com)       |
 // +-----------------------------------------------------------------+
 // | This program is free software: you can redistribute it and/or   |
 // | modify it under the terms of the GNU General Public License as  |
@@ -37,6 +37,7 @@ var account_type         = '<?php echo $account_type; ?>';
 var text_search          = '<?php echo TEXT_SEARCH;?>';
 var text_enter_new       = '<?php echo TEXT_ENTER_NEW; ?>';
 var text_properties      = '<?php echo TEXT_PROPERTIES; ?>';
+var post_error           = <?php echo $error ? "true" : "false"; ?>;
 var default_sales_tax    = -1;
 var contact_sales_tax    = -1;
 var image_delete_text    = '<?php echo TEXT_DELETE; ?>';
@@ -45,7 +46,6 @@ var store_country_code   = '<?php echo COMPANY_COUNTRY; ?>';
 var delete_icon_HTML     = '<?php echo substr(html_icon("emblems/emblem-unreadable.png", TEXT_DELETE, "small", "onclick=\"if (confirm(\'" . TEXT_DELETE_ENTRY . "\')) removeInvRow("), 0, -2); ?>';
 var delete_icon_HTML_PMT = '<?php echo substr(html_icon("emblems/emblem-unreadable.png", TEXT_DELETE, "small", "onclick=\"if (confirm(\'" . TEXT_DELETE_ENTRY . "\')) removePmtRow("), 0, -2); ?>';
 var serial_num_prompt    = '<?php echo ORD_JS_SERIAL_NUM_PROMPT; ?>';
-var text_serial_number	 = '<?php echo TEXT_SERIAL_NUMBER; ?>';
 var show_status          = '<?php echo ($account_type == "v") ? AP_SHOW_CONTACT_STATUS : AR_SHOW_CONTACT_STATUS; ?>';
 var warn_form_modified   = '<?php echo ORD_WARN_FORM_MODIFIED; ?>';
 var default_inv_acct     = '<?php echo DEF_INV_GL_ACCT; ?>';
@@ -88,7 +88,7 @@ function check_form() {
   var error_message = "<?php echo JS_ERROR; ?>";
   var todo    = document.getElementById('action').value;
   if (error == 1) {
-	$.messager.alert('error',error_message,'error');
+    alert(error_message);
     return false;
   }
   return true;
@@ -119,7 +119,7 @@ function refreshOrderClock() {
 		url: 'index.php?module=inventory&page=ajax&op=inv_details&fID=skuDetails&cID='+acct+'&qty='+qty+'&upc='+upc+'&rID='+rowCnt+'&jID='+journalID,
 		dataType: ($.browser.msie) ? "text" : "xml",
 		error: function(XMLHttpRequest, textStatus, errorThrown) {
-			$.messager.alert("Ajax Error ", XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown, "error");
+		  alert ("Ajax Error: " + XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown);
 		},
 		success: fillInventory
 	  });
@@ -208,7 +208,7 @@ function resetForm() {
 	// handle checkboxes
 	document.getElementById('bill_add_update').checked  = false;
 	changeOfTill();
-// remove all item rows and add a new blank one
+	// remove all item rows and add a new blank one
 	while (document.getElementById('item_table_body').rows.length >= 1) document.getElementById('item_table_body').deleteRow(-1);
 	while (document.getElementById('payment_table_body').rows.length >= 1) document.getElementById('payment_table_body').deleteRow(-1);
 	updateTotalPrices();
@@ -223,9 +223,9 @@ function clearAddress(type) {
 	document.getElementById(type+'_country_code').value         = store_country_code;
 	document.getElementById(type+'_to_select').style.visibility = 'hidden';
   	if (document.getElementById(type+'_to_select')) {
-      while (document.getElementById(type+'_to_select').options.length) {
-	    document.getElementById(type+'_to_select').remove(0);
-      }
+      	while (document.getElementById(type+'_to_select').options.length) {
+	    	document.getElementById(type+'_to_select').remove(0);
+      	}
   	}
     document.getElementById('copy_bill_primary_name').value       = default_array[0];
   	document.getElementById('copy_bill_primary_name').style.color = inactive_text_color;
@@ -234,6 +234,7 @@ function clearAddress(type) {
 		if (add_id != 'country_code') document.getElementById(type+'_'+add_id).style.color = inactive_text_color;
 		document.getElementById(type+'_'+add_id).value = default_array[i];	
   	}
+  	$("#orders_popup").fadeOut("slow"); 
 }
 
 function ajaxOrderData(cID, oID, jID, open_order, ship_only) {
@@ -243,26 +244,40 @@ function ajaxOrderData(cID, oID, jID, open_order, ship_only) {
 	    	url: 'index.php?module=phreebooks&page=ajax&op=load_order&cID='+cID+'&oID='+oID+'&jID='+jID+'&so_po=0&ship_only=0',
 	    	dataType: ($.browser.msie) ? "text" : "xml",
 	    	error: function(XMLHttpRequest, textStatus, errorThrown) {
-	    		$.messager.alert("Ajax Error ", XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown, "error");
+	      		alert ("Ajax Error: " + XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown);
 	    	},
 			success: fillOrderData
 	  	});
 	}else if(oID){
-		$.ajax({
-			type: "GET",
-			url: 'index.php?module=phreepos&page=ajax&op=print_previous&oID='+oID,
-			dataType: ($.browser.msie) ? "text" : "xml",
-			error: function(XMLHttpRequest, textStatus, errorThrown) {
-				$.messager.alert("Ajax Error ", XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown, "error");
-			},
-			success: PrintPreviousReceipt
-		});
+		if(jID == 19) {
+			$.ajax({
+				type: "GET",
+				url: 'index.php?module=phreepos&page=ajax&op=print_previous&oID='+oID,
+				dataType: ($.browser.msie) ? "text" : "xml",
+				error: function(XMLHttpRequest, textStatus, errorThrown) {
+					alert ("Ajax Error: " + XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown);
+				},
+				success: PrintPreviousReceipt
+			});
+		}else{
+			alert('cid= '+cID+' oID='+oID+' jID='+jID+' open_order='+open_order+' ship='+ship_only);
+			$.ajax({
+		    	type: "GET",
+		    	url: 'index.php?module=phreebooks&page=ajax&op=load_order&cID='+cID+'&oID='+oID+'&jID='+jID+'&so_po=0&ship_only=0',
+		    	dataType: ($.browser.msie) ? "text" : "xml",
+		    	error: function(XMLHttpRequest, textStatus, errorThrown) {
+		      		alert ("Ajax Error: " + XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown);
+		    	},
+				success: fillOrderData
+		  	});
+		}
 	}
 }
 
 function fillOrderData(sXml) { // edit response form fill
   var xml = parseXml(sXml);
   if (!xml) return;
+  alert('hier');
   if ($(xml).find("OrderData").length) {
 	orderFillAddress(xml, 'bill', false);
 	fillOrder(xml);
@@ -333,13 +348,19 @@ function orderFillAddress(xml, type, fill_address) {
     document.getElementById(type+'_to_select').style.visibility      = 'visible';
     document.getElementById(type+'_to_select').disabled              = false;
   });
-  numRows = document.getElementById('item_table_body').rows.length;
-  for (i=1; i<=numRows; i++) {
-	if(document.getElementById('sku_'+i).value !=''){
-  	  updateRowTotal(i, true);
-	}
-  }
-  document.getElementById('sku').focus();
+  	numRows = document.getElementById('item_table_body').rows.length;
+  	for (rowCnt=1; rowCnt<=numRows; rowCnt++) {
+		if(document.getElementById('sku_'+rowCnt).value !=''){
+		  	if(default_sales_tax == -1){
+				document.getElementById('tax_'   +rowCnt).value     = document.getElementById('product_tax_'+rowCnt).value;
+		  	}else{
+				document.getElementById('tax_'   +rowCnt).value     = default_sales_tax;
+		  	}
+  	  		updateRowTotal(rowCnt, true);
+		}
+  	}
+  	$("#orders_popup").fadeIn("slow");  
+  	document.getElementById('sku').focus();
 }
 
 function fillOrder(xml) {
@@ -412,7 +433,7 @@ function accountGuess(force) {
 	  guess = firstguess;
   }
   // test for data already in the form
-  if (guess == '') return $.messager.alert('info','Please enter a guess to search for the contact!','info');
+  if (guess == '') return alert('Please enter a guess to search for the contact!');
   if (guess != text_search && guess != '') {
     if (document.getElementById('bill_acct_id').value ||
         document.getElementById('bill_primary_name').value != default_array[0]) {
@@ -424,7 +445,7 @@ function accountGuess(force) {
 		url: 'index.php?module=phreebooks&page=ajax&op=load_searches&jID='+journalID+'&type=c&guess='+guess,
 		dataType: ($.browser.msie) ? "text" : "xml",
 		error: function(XMLHttpRequest, textStatus, errorThrown) {
-			$.messager.alert("Ajax Error ", XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown, "error");
+		  alert ("Ajax Error: " + XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown);
 		},
 		success: processAccountGuess
 	  });
@@ -433,14 +454,14 @@ function accountGuess(force) {
 }
 
 function processAccountGuess(sXml) {
-  var xml = parseXml(sXml);
-  if (!xml) return;
-  var result = $(xml).find("result").text();
-  if (result == 'success') {
-    fillOrderData(xml);
-  } else {
-	AccountList();
-  }
+	var xml = parseXml(sXml);
+	if (!xml) return;
+	var result = $(xml).find("result").text();
+	if (result == 'success') {
+		fillOrderData(xml);
+	} else {
+		AccountList();
+	}
 }
 
 function AccountList(currObj) {
@@ -451,7 +472,7 @@ function AccountList(currObj) {
 	if( firstguess != secondguess && firstguess != text_search && firstguess != ''){
 		  guess = firstguess;
 	}
-	window.open("index.php?module=contacts&page=popup_accts&type="+account_type+"&form=orders&fill=bill&jID=19&search_text="+guess,"accounts","width=850px,height=550px,resizable=1,scrollbars=1,top=150,left=100");
+	window.open("index.php?module=contacts&page=popup_accts&type=c&fill=bill&jID=19&search_text="+guess,"accounts","width=850px,height=550px,resizable=1,scrollbars=1,top=150,left=100");
 }
 
 function InventoryList(rowCnt) {
@@ -463,14 +484,9 @@ function InventoryList(rowCnt) {
 }
 
 function serialList(rowID) {
-	var choice    = document.getElementById(rowID).value;
-  	$.messager.prompt(text_serial_number, serial_num_prompt, function(newChoice){
-		if (newChoice){
-			insertValue(rowID, newChoice);
-		}
-		return false;
-	});
-	$('.messager-input').val(choice).focus();
+   var choice    = document.getElementById(rowID).value;
+   var newChoice = prompt(serial_num_prompt, choice);
+   if (newChoice) document.getElementById(rowID).value = newChoice;
 }
 
 function fillAddress(type) {
@@ -514,7 +530,7 @@ function addInvRow() {
   var rowCnt = newRow.rowIndex;
   // NOTE: any change here also need to be made to template form for reload if action fails
   cell  = '<td align="center">';
-  cell += buildIcon(icon_path+'16x16/emblems/emblem-unreadable.png', image_delete_text, 'onclick="if (confirm(\''+image_delete_msg+'\')) removeInvRow('+rowCnt+');"') + '</td>';
+  cell += buildIcon(icon_path+'16x16/emblems/emblem-unreadable.png', image_delete_text, '  id="delete_'+rowCnt+'" onclick="if (confirm(\''+image_delete_msg+'\')) removeInvRow('+rowCnt+');"') + '</td>';
   newCell = newRow.insertCell(-1);
   newCell.innerHTML = cell;
   cell  = '<td align="left"><input type="text" name="pstd_'+rowCnt+'" id="pstd_'+rowCnt+'" size="5" maxlength="6" onchange="updateRowTotal('+rowCnt+', true)" style="text-align:right" />';
@@ -566,36 +582,43 @@ function addInvRow() {
 }
 
 function removeInvRow(index) {
-  var i, acctIndex, offset, newOffset;
-  var numRows = document.getElementById('item_table_body').rows.length;
-  // remove row from display by reindexing and then deleting last row
-  for (i=index; i<numRows; i++) {
-	// move the delete icon from the previous row
-	offset    = i+1;
-	newOffset = i;
-	document.getElementById('item_table_body').rows[newOffset].cells[0].innerHTML = delete_icon_HTML + i + ');">';
-	document.getElementById('pstd_'+i).value     	= document.getElementById('pstd_'+(i+1)).value;
-	document.getElementById('sku_'+i).value      	= document.getElementById('sku_'+(i+1)).value;
-	document.getElementById('desc_'+i).value     	= document.getElementById('desc_'+(i+1)).value;
-	document.getElementById('price_'+i).value    	= document.getElementById('price_'+(i+1)).value;
-	document.getElementById('acct_'+i).value     	= document.getElementById('acct_'+(i+1)).value;
-	document.getElementById('tax_'+i).value      	= document.getElementById('tax_'+(i+1)).value;
-	document.getElementById('product_tax_'+i).value = document.getElementById('product_tax_'+(i+1)).value;
-// Hidden fields
-	document.getElementById('id_'+i).value       	= document.getElementById('id_'+(i+1)).value;
-	document.getElementById('stock_'+i).value    	= document.getElementById('stock_'+(i+1)).value;
-	document.getElementById('inactive_'+i).value 	= document.getElementById('inactive_'+(i+1)).value;
-	document.getElementById('serial_'+i).value   	= document.getElementById('serial_'+(i+1)).value;
-	document.getElementById('full_'+i).value     	= document.getElementById('full_'+(i+1)).value;
-	document.getElementById('fixed_price_'+i).value	= document.getElementById('fixed_price_'+(i+1)).value;
-	document.getElementById('disc_'+i).value     	= document.getElementById('disc_'+(i+1)).value;
-// End hidden fields
-	document.getElementById('total_'+i).value    	= document.getElementById('total_'+(i+1)).value;
-	document.getElementById('wttotal_'+i).value  	= document.getElementById('wttotal_'+(i+1)).value;
-	document.getElementById('wtprice_'+i).value  	= document.getElementById('wtprice_'+(i+1)).value;
-  }
-  document.getElementById('item_table_body').deleteRow(-1);
-  updateTotalPrices();
+  	var i, acctIndex, offset, newOffset;
+  	var numRows = document.getElementById('item_table_body').rows.length;
+  	// remove row from display by reindexing and then deleting last row
+  	for (i=index; i<numRows; i++) {
+		// move the delete icon from the previous row
+		offset    = i+1;
+		newOffset = i;
+		$('#delete_'+i).unbind('click').click(function(){
+			if (confirm(image_delete_msg)) removeInvRow(i);
+		});
+		document.getElementById('pstd_'+i).value     	= document.getElementById('pstd_'+(i+1)).value;
+		document.getElementById('sku_'+i).value      	= document.getElementById('sku_'+(i+1)).value;
+		document.getElementById('desc_'+i).value     	= document.getElementById('desc_'+(i+1)).value;
+		document.getElementById('price_'+i).value    	= document.getElementById('price_'+(i+1)).value;
+		document.getElementById('acct_'+i).value     	= document.getElementById('acct_'+(i+1)).value;
+		document.getElementById('tax_'+i).value      	= document.getElementById('tax_'+(i+1)).value;
+		document.getElementById('product_tax_'+i).value = document.getElementById('product_tax_'+(i+1)).value;
+		// Hidden fields
+		document.getElementById('id_'+i).value       	= document.getElementById('id_'+(i+1)).value;
+		document.getElementById('stock_'+i).value    	= document.getElementById('stock_'+(i+1)).value;
+		document.getElementById('inactive_'+i).value 	= document.getElementById('inactive_'+(i+1)).value;
+		document.getElementById('serial_'+i).value   	= document.getElementById('serial_'+(i+1)).value;
+		document.getElementById('full_'+i).value     	= document.getElementById('full_'+(i+1)).value;
+		document.getElementById('fixed_price_'+i).value	= document.getElementById('fixed_price_'+(i+1)).value;
+		document.getElementById('disc_'+i).value     	= document.getElementById('disc_'+(i+1)).value;
+		// End hidden fields
+		document.getElementById('total_'+i).value    	= document.getElementById('total_'+(i+1)).value;
+		document.getElementById('wttotal_'+i).value  	= document.getElementById('wttotal_'+(i+1)).value;
+		document.getElementById('wtprice_'+i).value  	= document.getElementById('wtprice_'+(i+1)).value;
+		if(document.getElementById('sku_'+i).value != ''){
+			$('#pstd_' + i).prop('disabled', false);
+			$('#sku_prop_'+i).show();
+			$('#sku_'+i).show();
+		} 
+  	}
+  	document.getElementById('item_table_body').deleteRow(-1);
+  	updateTotalPrices();
 } 
 
 function addPmtRow() {
@@ -677,8 +700,8 @@ function updateRowTotal(rowCnt, useAjax) {
 	document.getElementById('wtprice_' +rowCnt).value	 = formatCurrency(wtunit_price);
 	// calculate discount
 	if (full_price > 0) {
-	  var discount = (full_price - unit_price) / full_price;
-	  document.getElementById('disc_'+rowCnt).value = new String(Math.round(1000*discount)/10);
+	  	var discount = (full_price - unit_price) / full_price;
+	  	document.getElementById('disc_'+rowCnt).value = new String(Math.round(1000*discount)/10);
 	}
 	updateTotalPrices();
 	// call the ajax price sheet update based on customer
@@ -691,7 +714,7 @@ function updateRowTotal(rowCnt, useAjax) {
 	      url: 'index.php?module=inventory&page=ajax&op=inv_details&fID=skuPrice&cID='+cID+'&sku='+sku+'&qty='+qty+'&rID='+rowCnt+'&strict=1',
 	      dataType: ($.browser.msie) ? "text" : "xml",
 	      error: function(XMLHttpRequest, textStatus, errorThrown) {
-	    	  $.messager.alert("Ajax Error ", XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown, "error");
+		    alert ("Ajax Error: " + XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown);
 	      },
 	      success: processSkuPrice
 	    });
@@ -932,58 +955,35 @@ function newformatPrecise(amount) { // convert to expected currency format with 
   }
 }
 
-/**
- * this function is started when you click the sku search icon.
- */
-function startSkuSearch($sku){
-	if (sku == '' || sku === text_search) return;
-	// search if item is aready present then increment it by one
-	var numRows = document.getElementById('item_table_body').rows.length;
-	var qty = 1;
-	var rowCnt = 0;
-	for (var i=1; i<=numRows; i++) {
-		if (document.getElementById('sku_' +i).value == sku && document.getElementById('fixed_price_' +i).value > formatted_zero){
-		  	qty = document.getElementById('pstd_' +i).value;
-		  	qty++;
-			rowCnt = i;
-		}
-	}
-	var cID = document.getElementById('bill_acct_id').value;
-	var bID = document.getElementById('store_id').value;
-	$.ajax({
-	  type: "GET",
-	  contentType: "application/xml; charset=utf-8",
-	  url: 'index.php?module=inventory&page=ajax&op=inv_details&fID=skuDetails&bID='+bID+'&cID='+cID+'&qty='+qty+'&iID='+iID+'&strict=1&sku='+sku+'&rID='+rowCnt+'&jID='+journalID,
-	  dataType: ($.browser.msie) ? "text" : "xml",
-	  error: function(XMLHttpRequest, textStatus, errorThrown) {
-	  	$.messager.alert("Ajax Error ", XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown, "error");
-	  },
-	  success: fillInventory
-	});
-}
-
-
-/**
- * this function is called after you click on a row in the inventory pop_up
- */
+// AJAX auto load SKU pair
 function loadSkuDetails(iID, rowCnt) {
-  var sku;
-  if (!iID) return;
-  // search if item is aready present then increment it by one
-  var qty = 1;
-  var rowCnt = 0;
-  var cID = document.getElementById('bill_acct_id').value;
-  var bID = document.getElementById('store_id').value;
-  $.ajax({
-    type: "GET",
-    contentType: "application/xml; charset=utf-8",
-	url: 'index.php?module=inventory&page=ajax&op=inv_details&fID=skuDetails&bID='+bID+'&cID='+cID+'&qty='+qty+'&iID='+iID+'&strict=1&sku='+sku+'&rID='+rowCnt+'&jID='+journalID,
-    dataType: ($.browser.msie) ? "text" : "xml",
-    error: function(XMLHttpRequest, textStatus, errorThrown) {
-    	$.messager.alert("Ajax Error ", XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown, "error");
-    },
-    success: fillInventory
-  });
+  	var qty, sku;
+	// check to see if there is a sku present
+  	if (!iID) sku = document.getElementById('sku').value; // read the search field as the real value
+  	if (!iID && (sku == '' || sku === text_search)) return;
+	// search if item is aready present then increment it by one
+  	var numRows = document.getElementById('item_table_body').rows.length;
+  	var qty = 1;
+  	var rowCnt = 0;
+  	for (var i=1; i<=numRows; i++) {
+		if (document.getElementById('sku_' +i).value == sku && document.getElementById('fixed_price_' +i).value > formatted_zero){
+	  		qty = document.getElementById('pstd_' +i).value;
+	  		qty++;
+	  		rowCnt = i;
+		}
+  	}
+  	var cID = document.getElementById('bill_acct_id').value;
+  	var bID = document.getElementById('store_id').value;
+	$.ajax({
+	    type: "GET",
+	    contentType: "application/xml; charset=utf-8",
+		url: 'index.php?module=inventory&page=ajax&op=inv_details&fID=skuDetails&bID='+bID+'&cID='+cID+'&qty='+qty+'&iID='+iID+'&strict=1&sku='+sku+'&rID='+rowCnt+'&jID='+journalID,
+	    dataType: ($.browser.msie) ? "text" : "xml",
+	    error: function(XMLHttpRequest, textStatus, errorThrown) {
+	    	alert ("Ajax Error: " + XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown);
+	    },
+	    success: fillInventory
+	});
 }
 
 function fillInventory(sXml) {
@@ -1084,7 +1084,7 @@ function monitorPrinting() {
     } else {
       var e = qz.getException();
       if (e != null) {
-    	$.messager.alert("printing exception occured ", e.getLocalizedMessage(),'error');
+	    alert("printing exception occured: " + e.getLocalizedMessage());
 	  }
     }
   } 
@@ -1168,12 +1168,13 @@ function SavePayment(PrintOrSave) { // request function
   var f3 = document.getElementById(payment_method+'_field_3') ? document.getElementById(payment_method+'_field_3').value : '';
   var f4 = document.getElementById(payment_method+'_field_4') ? document.getElementById(payment_method+'_field_4').value : '';
 <?php
-  foreach ($admin_classes['payment']->methods as $method) { // fetch the javascript validation of payments module
-  	if ($method->installed)	echo $method->javascript_validation();
+  foreach ($payment_modules as $pmt_class) { // fetch the javascript validation of payments module
+	$value = $pmt_class['id'];
+	echo $$value->javascript_validation();
   }
 ?>
   if ( error_message != ''){
-	  $.messager.alert('error',error_message,'error');
+	  alert(error_message);
 	  return false;
   }
   addPmtRow();
@@ -1204,7 +1205,7 @@ function ajaxSave(PrintOrSave){
 		dataType: ($.browser.msie) ? "text" : "xml",
 		data: $("form").serialize(),
 		error: function(XMLHttpRequest, textStatus, errorThrown) {
-			$.messager.alert("Ajax Error ", XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown, "error");
+		      alert ("Ajax ErrorThrown: " + errorThrown + "\nTextStatus: " + textStatus + "\nError: " + XMLHttpRequest.responseText);
 		      save_allowed = true;
 			},
 		success: ajaxPrintAndClean
@@ -1219,7 +1220,7 @@ function ajaxPrintAndClean(sXml) { // call back function
     var qz = document.getElementById('qz');
     if (!xml) return;
   	var massage 	= $(xml).find("massage").text();
-  	if ( massage ) 	 $.messager.alert('info', massage,'info');
+  	if ( massage ) 	  alert( massage );
   	var action 		= $(xml).find("action").text();
   	var print 		= action.substring(0,5) == 'print';
   	var tillId 		= document.getElementById('till_id').value;
@@ -1253,8 +1254,7 @@ function ajaxPrintAndClean(sXml) { // call back function
 }
 
 function jzebraReady(){
-//	alert('POS is now ready');
-	//qz = document.getElementById('qz');
+	changeOfTill();
 }
 
 //Automatically gets called when applet is done appending a file
@@ -1280,7 +1280,7 @@ function jzebraDoneFindingPrinters() {
 	var qz = document.getElementById('qz');
 	if (qz.tagName.toLowerCase() == "applet") {
 		if (qz.getPrinter() == null) {
-    		return $.messager.alert('error','Can not find Printer ' + tills[tillId].printer,'error');
+    		return alert('Error: Can not find Printer ' + tills[tillId].printer);
 		} 
    	}
 }
@@ -1290,7 +1290,7 @@ function jzebraDonePrinting() {
 	var qz = document.getElementById('qz');
 	if (qz.tagName.toLowerCase() == "applet") {
    		if (qz.getException() != null) {
-    		return $.messager.alert('printing error', qz.getExceptionMessage(),'error');
+    		return alert('printing error:' + qz.getExceptionMessage());
    		}
    	}
 }
@@ -1306,7 +1306,7 @@ function GetPrintPreviousReceipt() {
       url: 'index.php?module=phreepos&page=ajax&op=print_previous',
       dataType: ($.browser.msie) ? "text" : "xml",
       error: function(XMLHttpRequest, textStatus, errorThrown) {
-    	  $.messager.alert("Ajax Error ", XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown, "error");
+      	alert ("Ajax Error: " + XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown);
       },
       success: PrintPreviousReceipt
      });
@@ -1317,7 +1317,7 @@ function PrintPreviousReceipt(sXml) { // call back function
 	  var qz = document.getElementById('qz');
 	  if (!xml) return;
 	  var massage = $(xml).find("massage").text();
-	  if ( massage ) $.messager.alert('info', massage,'info');
+	  if ( massage ) alert( massage );
 	  var tillId = document.getElementById('till_id').value;
 	  if (qz.tagName.toLowerCase() == "applet" && tills[tillId].printer != '') {
 		  //qz.setEncoding(tills[tillId].printerEncoding);
@@ -1390,6 +1390,7 @@ function changeOfType(){
 			}
 		}
 	}
+	document.getElementById('sku').focus();
 }
 
 function set_ot_options() {
@@ -1425,7 +1426,7 @@ function SaveOt(){
 		dataType: ($.browser.msie) ? "text" : "xml",
 		data: $("form [name=popupOtherTrans]").serialize(),
 		error: function(XMLHttpRequest, textStatus, errorThrown) {
-			$.messager.alert("Ajax Error ", XMLHttpRequest.responseText + "\nTextStatus: " + textStatus + "\nErrorThrown: " + errorThrown, "error");
+		      alert ("Ajax ErrorThrown: " + errorThrown + "\nTextStatus: " + textStatus + "\nError: " + XMLHttpRequest.responseText);
 			},
 		success: cleanOt
 	  });
@@ -1452,21 +1453,63 @@ function popupContact(){
 	}
 	//loads popup only if it is disabled
 	if(popupStatus==0){  
-		$('#customer_div').window('open');
+		$("#backgroundPopup").fadeIn("slow");  
+		$("#customer_div").fadeIn("slow");  
 		popupStatus = 1;
 	}
+	var windowWidth = document.documentElement.clientWidth;  
+	var windowHeight = document.documentElement.clientHeight;  
+	var popupHeight = $("#customer_div").height();  
+	var popupWidth = $("#customer_div").width();  
+	//centering  
+	$("#customer_div").css({  
+		"position": "absolute",
+		"top": windowHeight/2-popupHeight/2,  
+		"left": windowWidth/2-popupWidth/2  
+	});  
+	$("#backgroundPopup").css({
+		"position": "absolute",
+		"opacity": "0.7",
+		"background":"#000000",  
+		"top": "0px",  
+		"left": "0px",
+		"height": windowHeight,  
+		"width":  windowWidth	  
+	});
 }  
 
 //loading popup with jQuery magic!  
 function popupPayment(){  
 	//loads popup only if it is disabled
 	if(popupStatus==0){  
-		$('#popupPayment').window('open');
+		$("#backgroundPopup").fadeIn("slow");  
+		$("#popupPayment").fadeIn("slow");  
 		popupStatus = 1;
 		document.getElementById('amount').value = document.getElementById('bal_due').value;
 		activateFields();
 		document.getElementById('amount').select();
-	}	
+	}
+	//request data for centering  
+	var windowWidth = document.documentElement.clientWidth;  
+	var windowHeight = document.documentElement.clientHeight;  
+	var popupHeight = $("#popupPayment").height();  
+	var popupWidth = $("#popupPayment").width();  
+	//centering  
+	$("#popupPayment").css({  
+		"position": "absolute",
+		"top": windowHeight/2-popupHeight/2,  
+		"left": windowWidth/2-popupWidth/2  
+	});  
+	$("#backgroundPopup").css({
+		"position": "absolute",
+		"opacity": "0.7",
+		"background":"#000000",  
+		"top": "0px",  
+		"left": "0px",
+		"height": windowHeight,  
+		"width":windowWidth	  
+	});
+	
 }  
 
 function open_other_options(){
@@ -1484,17 +1527,39 @@ function open_other_options(){
 function ShowOtherTrans(){
 	// start by fadinng out the other options menu bar then show background and 
 	$("#other_options").fadeOut("slow"); 
-	$('#popupOtherTrans').window('open');  
+	$("#backgroundPopup").fadeIn("slow");  
+	$("#popupOtherTrans").fadeIn("slow");  
 	popupStatus = 1;
+	//request data for centering  
+	var windowWidth = document.documentElement.clientWidth;  
+	var windowHeight = document.documentElement.clientHeight;  
+	var popupHeight = $("#popupOtherTrans").height();  
+	var popupWidth = $("#popupOtherTrans").width();  
+	//centering  
+	$("#popupOtherTrans").css({  
+		"position": "absolute",
+		"top": windowHeight/2-popupHeight/2,  
+		"left": windowWidth/2-popupWidth/2  
+	});  
+	$("#backgroundPopup").css({
+		"position": "absolute",
+		"opacity": "0.7",
+		"background":"#000000",  
+		"top": "0px",  
+		"left": "0px",
+		"height": windowHeight,  
+		"width":windowWidth	  
+	});
 }
 
 //disabling popup with jQuery magic!  
 function disablePopup(){  
 	//disables popup only if it is enabled  
 	if(popupStatus==1){  
-		$("#popupOtherTrans").window('close');
-		$("#popupPayment").window('close'); 
-		$("#customer_div").window('close');
+		$("#popupOtherTrans").fadeOut("slow");
+		$("#backgroundPopup").fadeOut("slow");  
+		$("#popupPayment").fadeOut("slow"); 
+		$("#customer_div").fadeOut("slow");
 		popupStatus = 0;  
 		document.getElementById('sku').focus();
 	}  
@@ -1514,6 +1579,10 @@ function setImage(src){
 }
 
 $(document).ready(function(){ 
+	$("#backgroundPopup").click(function(){
+		disablePopup();  
+	});
+
 	$("#disc_percent").keydown(function(event) {
 		$("#discount").val('');
 	});
@@ -1525,14 +1594,20 @@ $(document).ready(function(){
 	$("#amount").keydown(function(event) {
 		if (event.keyCode == 13) SavePayment('save');
 	});
+
 	$("#open_other_options").click(function(){
 		open_other_options();  
-	});
-	  
+	});	
+
+	$("#orders_popup").click(function(){
+		var cid = document.getElementById('bill_acct_id').value;		
+		window.open("index.php?module=phreepos&page=popup_orders&jID=10&cid="+cid,"search_po","width=700px,height=550px,resizable=1,scrollbars=1,top=150,left=200");
+	}); 
 });
 
 //Press Escape event!  
 $(document).keydown(function(event){
+	
 	if (event.altKey && event.keyCode == 82) {
 		event.preventDefault();
 		// if alt + r then redirect to template return
@@ -1627,7 +1702,6 @@ $(document).keydown(function(event){
 		event.originalEvent.keyCode = 0;
 	}
 });  
-
 
 </script>
 <link rel="stylesheet" type="text/css" href="modules/phreepos/style_sheet/main.css" />
