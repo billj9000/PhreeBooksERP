@@ -78,6 +78,10 @@ if ($cID && !$just_ship) { // build the contact data
     where ref_id = '" . $cID . "' and type in ('" . $type . "m', '" . $type . "b')");
   //fix some special fields
   if (!$contact->fields['dept_rep_id']) unset($contact->fields['dept_rep_id']); // clear the rep field if not set to a contact
+  if ($jID == 19) {
+  	$result = $db->Execute("select id from ".TABLE_JOURNAL_MAIN." where closed = '0' and journal_id in (4,10) and bill_acct_id = $cID limit 1");
+  	$contact->fields['NumberOfOutStandingOrders']  = $result->RecordCount();
+  }
 }
 // Now fill the order, if it is requested
 if (sizeof($order->fields) > 0) {
@@ -285,7 +289,6 @@ if (sizeof($order->fields) > 0) {
 	  }
 	}
 }
-
 // build the form data
 if (sizeof($contact->fields) > 0) {
   $xml .= "<BillContact>\n";
@@ -319,7 +322,6 @@ if (sizeof($order->fields) > 0) { // there was an order to open
   }
   $xml .= "</OrderData>\n";
 }
-
 if ($debug) $xml .= xmlEntry('debug', $debug);
 echo createXmlHeader() . $xml . createXmlFooter();
 die;

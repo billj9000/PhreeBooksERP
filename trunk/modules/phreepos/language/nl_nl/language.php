@@ -44,6 +44,7 @@ define('EXCEED_MAX_DISCOUNT','U heeft het maximum kortingspercentage van %s over
 define('EXCEED_MAX_DISCOUNT_SKU','U heeft het maximum kortingspercentage van %s overschreden voor artiekel %s');
 define('OTHER_OPTIONS','Overige Opties');
 define('POS_PRINT_OTHER','Print Andere Bon');
+define('TEXT_OPEN_ORDERS_POPUP', 'Open Orders PopUp');
 
 define('TEXT_CASH_IN','Geld In'); 
 define('TEXT_CASH_OUT','Geld Uit');

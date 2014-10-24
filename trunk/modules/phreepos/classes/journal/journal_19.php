@@ -16,7 +16,7 @@
 // +-----------------------------------------------------------------+
 //  Path: /modules/phreepos/classes/journal/journal_19.php
 //
-// POS Journal
+// POS Journal 
 require_once(DIR_FS_MODULES . 'phreebooks/classes/gen_ledger.php');
 class journal_19 extends journal {
 	public $id					= '';
@@ -198,7 +198,7 @@ class journal_19 extends journal {
 		if ($this->item_rows[$i]['pstd']) { // make sure the quantity line is set and not zero
 		  $this->journal_rows[] = array(
 			'id'                      => $this->item_rows[$i]['id'],	// retain the db id (used for updates)
-			'so_po_item_ref_id'       => 0,	// item reference id for so/po line items
+			'so_po_item_ref_id'       => $this->item_rows[$i]['so_po_item_ref_id'],	// item reference id for so/po line items
 			'gl_type'                 => $this->gl_type,
 			'sku'                     => $this->item_rows[$i]['sku'],
 			'qty'                     => $this->item_rows[$i]['pstd'],

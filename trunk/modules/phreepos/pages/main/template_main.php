@@ -31,6 +31,7 @@ echo html_hidden_field('purchase_invoice_id',$order->purchase_invoice_id) . chr(
 echo html_hidden_field('post_date',          $order->post_date) . chr(10);
 echo html_hidden_field('gl_acct_id',         $order->gl_acct_id) . chr(10);
 echo html_hidden_field('store_id',           $order->store_id) . chr(10);
+echo html_hidden_field('so_po_ref_id',       $order->so_po_ref_id) . chr(10);	// PO/SO number assigned to purchase/sales-invoice (if applicable)
 if (!ENABLE_MULTI_CURRENCY) echo html_hidden_field('display_currency', DEFAULT_CURRENCY) . chr(10);
 if (!ENABLE_MULTI_CURRENCY) echo html_hidden_field('currencies_value', '1') . chr(10);
 
@@ -181,7 +182,7 @@ echo $toolbar->build_toolbar();
 <div id="search_customer" >
 <?php 
   echo ORD_ACCT_ID . ' ' . html_input_field('copy_search', isset($order->short_name) ? $order->short_name : TEXT_SEARCH, 'size="21" maxlength="20" title="' . TEXT_SEARCH . '" onchange="accountGuess(true)"');
-  echo '&nbsp;' . html_icon('actions/system-search.png', TEXT_SEARCH, 'small', 'align="top" style="cursor:pointer" onclick="accountGuess(true)"').'<br>'. chr(10);  
+  echo '&nbsp;' . html_icon('actions/system-search.png', TEXT_SEARCH, 'small', 'align="top" style="cursor:pointer" onclick="accountGuess(false)"').'<br>'. chr(10);  
   echo html_input_field('copy_bill_primary_name',$order->bill_primary_name, 'size="33" maxlength="32" onfocus="clearField(\'bill_primary_name\', \'' . GEN_PRIMARY_NAME . '\')" onblur="setField(\'bill_primary_name\', \'' . GEN_PRIMARY_NAME . '\')"', true).'<br>'. chr(10);
   echo html_button_field('customer_popup_buttom', TEXT_SELECT_CUSTOMER, 'onclick="popupContact()"'). '&nbsp;' ; 
   echo html_button_field('orders_popup', TEXT_OPEN_ORDERS_POPUP) . '<br>'. chr(10);

@@ -260,7 +260,6 @@ function ajaxOrderData(cID, oID, jID, open_order, ship_only) {
 				success: PrintPreviousReceipt
 			});
 		}else{
-			alert('cid= '+cID+' oID='+oID+' jID='+jID+' open_order='+open_order+' ship='+ship_only);
 			$.ajax({
 		    	type: "GET",
 		    	url: 'index.php?module=phreebooks&page=ajax&op=load_order&cID='+cID+'&oID='+oID+'&jID='+jID+'&so_po=0&ship_only=0',
@@ -277,7 +276,6 @@ function ajaxOrderData(cID, oID, jID, open_order, ship_only) {
 function fillOrderData(sXml) { // edit response form fill
   var xml = parseXml(sXml);
   if (!xml) return;
-  alert('hier');
   if ($(xml).find("OrderData").length) {
 	orderFillAddress(xml, 'bill', false);
 	fillOrder(xml);
@@ -306,6 +304,7 @@ function orderFillAddress(xml, type, fill_address) {
 		insertValue('copy_search',     $(this).find("short_name").text());
 		insertValue('acct_1',          default_inv_acct);
 	//	insertValue('rep_id',          $(this).find("dept_rep_id").text());
+	 	if ($(this).find("NumberOfOutStandingOrders").text()) $("#orders_popup").fadeIn("slow"); 
 		var rowCnt = 1;
 		while(true) {
 		  if (!document.getElementById('tax_'+rowCnt)) break;
@@ -358,8 +357,7 @@ function orderFillAddress(xml, type, fill_address) {
 		  	}
   	  		updateRowTotal(rowCnt, true);
 		}
-  	}
-  	$("#orders_popup").fadeIn("slow");  
+  	} 
   	document.getElementById('sku').focus();
 }
 
@@ -378,6 +376,7 @@ function fillOrder(xml) {
     if ($(this).find("id").first().text() && journalID != 6 && journalID != 7 && journalID != 21) {
 	  document.getElementById('purchase_invoice_id').readOnly = true;
     }
+    insertValue('so_po_ref_id', $(this).find("id").first().text());
     if ($(this).find("id").first().text() && securityLevel < 3) { // turn off some icons
 //	  removeElement('tb_main_0', 'tb_icon_print');
 //	  removeElement('tb_main_0', 'tb_icon_save');
@@ -400,8 +399,8 @@ function fillOrder(xml) {
 	    case 'sos':
 	    case 'poo':
 	    case 'por':
-		  insertValue('id_'  + jIndex,       $(this).find("id").text());
-		  insertValue('pstd_' + jIndex,      $(this).find("pstd").text());
+		  insertValue('so_po_item_ref_id_'  + jIndex,       $(this).find("id").text());
+		  //insertValue('pstd_' + jIndex,      $(this).find("pstd").text());
 		  insertValue('sku_'  + jIndex,      $(this).find("sku").text());
 		  insertValue('desc_'  + jIndex,     $(this).find("description").text());
 		  insertValue('acct_'  + jIndex,     $(this).find("gl_account").text());
@@ -557,6 +556,7 @@ function addInvRow() {
   cell  = '<td align="center">';
 // Hidden fields
   cell += '<input type="hidden" name="id_'+rowCnt+'" id="id_'+rowCnt+'" value="" />';
+  cell += '<input type="hidden" name="so_po_item_ref_id_'+rowCnt+'" id="so_po_item_ref_id_'+rowCnt+'" value="" />';
   cell += '<input type="hidden" name="stock_'+rowCnt+'" id="stock_'+rowCnt+'" value="NA" />';
   cell += '<input type="hidden" name="inactive_'+rowCnt+'" id="inactive_'+rowCnt+'" value="0" />';
   cell += '<input type="hidden" name="serial_'+rowCnt+'" id="serial_'+rowCnt+'" value="" />';
