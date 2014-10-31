@@ -171,15 +171,15 @@ html>body table#item_table thead th + th {
 }
 
 html>body table#item_table thead th + th + th {
-    width: 190px;
+    width: 70px;
 }
 
 html>body table#item_table thead th + th + th + th {
-    width: 255px;
+    width: 190px;
 }
 
 html>body table#item_table thead th + th + th + th + th {
-    width: 80px;
+    width: 255px;
 }
 
 html>body table#item_table thead th + th + th + th + th + th {
@@ -187,6 +187,10 @@ html>body table#item_table thead th + th + th + th + th + th {
 }
 
 html>body table#item_table thead th + th + th + th + th + th + th {
+    width: 80px;
+}
+
+html>body table#item_table thead th + th + th + th + th + th + th + th {
     width: 15px;
 }
 
@@ -206,21 +210,24 @@ html>body table#item_table tbody td + td {
 }
 
 html>body table#item_table tbody td + td + td {
-    width: 190px;
+    width: 70px;
 }
 
 html>body table#item_table tbody td + td + td + td {
-    width: 255px;
+    width: 190px;
 }
 
 html>body table#item_table tbody td + td + td + td + td {
-    width: 80px;
+    width: 255px;
 }
 
 html>body table#item_table tbody td + td + td + td + td + td {
     width: 80px;
 }
 
+html>body table#item_table tbody td + td + td + td + td + td {
+    width: 80px;
+}
 
 html>body table#item_table tfoot tr {
     display: block;
@@ -234,18 +241,22 @@ html>body table#item_table tfoot th + th {
 }
 
 html>body table#item_table tfoot th + th + th {
-    width: 190px;
+    width: 70px;
 }
 
 html>body table#item_table tfoot th + th + th + th {
-    width: 255px;
+    width: 190px;
 }
 
 html>body table#item_table tfoot th + th + th + th + th {
-    width: 80px;
+    width: 255px;
 }
 
 html>body table#item_table tfoot th + th + th + th + th + th {
+    width: 80px;
+}
+
+html>body table#item_table tfoot th + th + th + th + th + th + th {
     width: 80px;
 }
 

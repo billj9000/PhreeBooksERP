@@ -58,6 +58,7 @@ define('EXCEED_MAX_DISCOUNT_SKU','You have exceded the maximum discount of %s pe
 define('OTHER_OPTIONS','Other Options');
 define('POS_PRINT_OTHER','Print Other Receipt');
 define('TEXT_OPEN_ORDERS_POPUP', 'Open Orders PopUp');
+define('TEXT_ORDERD', 'Orderd');
 define('TEXT_CASH_IN','Cash In'); 
 define('TEXT_CASH_OUT','Cash Out');
 define('TEXT_EXPENSES','Expenses');

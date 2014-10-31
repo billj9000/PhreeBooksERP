@@ -194,6 +194,7 @@ echo $toolbar->build_toolbar();
 		<tr>
 			<th class="dataTableHeadingContent"></th>
 			<th class="dataTableHeadingContent"><?php echo TEXT_QUANTITY; ?></th>
+			<th class="dataTableHeadingContent"><?php echo TEXT_ORDERD; ?></th>
 			<th class="dataTableHeadingContent"><?php echo TEXT_SKU; ?></th>
 			<th class="dataTableHeadingContent"><?php echo TEXT_DESCRIPTION; ?></th>
 			<th class="dataTableHeadingContent"><?php echo TEXT_UNIT_PRICE; ?></th>

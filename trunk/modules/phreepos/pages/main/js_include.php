@@ -381,10 +381,8 @@ function fillOrder(xml) {
 //	  removeElement('tb_main_0', 'tb_icon_print');
 //	  removeElement('tb_main_0', 'tb_icon_save');
     }
-    addInvRow();
     // fill inventory rows and add a new blank one
     var order_discount = formatted_zero;
-    var jIndex = 1;
     $(this).find("Item").each(function() {
 	  var gl_type = $(this).find("gl_type").text();
       switch (gl_type) {
@@ -399,8 +397,12 @@ function fillOrder(xml) {
 	    case 'sos':
 	    case 'poo':
 	    case 'por':
+	    	addInvRow();
+	    	jIndex = document.getElementById('item_table_body').rows.length;
 		  insertValue('so_po_item_ref_id_'  + jIndex,       $(this).find("id").text());
-		  //insertValue('pstd_' + jIndex,      $(this).find("pstd").text());
+		  insertValue('pstd_' + jIndex,    0);
+		  insertValue('orderd_' + jIndex,    $(this).find("qty").text() - $(this).find("pstd").text());
+		  document.getElementById('orderd_'+ jIndex).style.visibility = '';
 		  insertValue('sku_'  + jIndex,      $(this).find("sku").text());
 		  insertValue('desc_'  + jIndex,     $(this).find("description").text());
 		  insertValue('acct_'  + jIndex,     $(this).find("gl_account").text());
@@ -411,12 +413,13 @@ function fillOrder(xml) {
 		  insertValue('price_' + jIndex,     $(this).find("unit_price").text());
 		  insertValue('total_' + jIndex,     $(this).find("total").text());
 		  updateRowTotal(jIndex, false);
-		  jIndex++;
 	    default: // do nothing
 	  }
     });
     insertValue('discount', order_discount);
     calculateDiscountPercent();
+    updateTotalPrices();
+    $("#orders_popup").fadeOut("slow"); 
   });
 }
 
@@ -537,6 +540,9 @@ function addInvRow() {
   cell += '</td>';
   newCell = newRow.insertCell(-1);
   newCell.innerHTML = cell;
+  cell = '<td><input name="orderd_'+rowCnt+'" id="orderd_'+rowCnt+'" readonly="readonly" size="5" maxlength="6" style="visibility:hidden" /></td>';
+  newCell = newRow.insertCell(-1);
+  newCell.innerHTML = cell;
   cell  = '<td align="left"><input type="text" name="sku_'+rowCnt+'" id="sku_'+rowCnt+'" readonly="readonly" size="'+(max_sku_len+1)+'" maxlength="'+max_sku_len+'"  />&nbsp;';
   cell += buildIcon(icon_path+'16x16/actions/document-properties.png', text_properties, 'id="sku_prop_'+rowCnt+'" align="top" style="cursor:pointer" onclick="InventoryProp('+rowCnt+')"');
   cell += '</td>';
@@ -555,7 +561,7 @@ function addInvRow() {
   $('#serial_' +rowCnt).hide();
   cell  = '<td align="center">';
 // Hidden fields
-  cell += '<input type="hidden" name="id_'+rowCnt+'" id="id_'+rowCnt+'" value="" />';
+  //cell += '<input type="hidden" name="id_'+rowCnt+'" id="id_'+rowCnt+'" value="" />';
   cell += '<input type="hidden" name="so_po_item_ref_id_'+rowCnt+'" id="so_po_item_ref_id_'+rowCnt+'" value="" />';
   cell += '<input type="hidden" name="stock_'+rowCnt+'" id="stock_'+rowCnt+'" value="NA" />';
   cell += '<input type="hidden" name="inactive_'+rowCnt+'" id="inactive_'+rowCnt+'" value="0" />';
@@ -593,6 +599,8 @@ function removeInvRow(index) {
 			if (confirm(image_delete_msg)) removeInvRow(i);
 		});
 		document.getElementById('pstd_'+i).value     	= document.getElementById('pstd_'+(i+1)).value;
+		document.getElementById('orderd_'+i).value     	= document.getElementById('orderd_'+(i+1)).value;
+		document.getElementById('orderd_'+i).style.visibility	= document.getElementById('orderd_'+(i+1)).style.visibility;
 		document.getElementById('sku_'+i).value      	= document.getElementById('sku_'+(i+1)).value;
 		document.getElementById('desc_'+i).value     	= document.getElementById('desc_'+(i+1)).value;
 		document.getElementById('price_'+i).value    	= document.getElementById('price_'+(i+1)).value;
@@ -689,7 +697,10 @@ function updateRowTotal(rowCnt, useAjax) {
 	if (tax_index == -1 || tax_index == '') tax_index = 0;
 	var wtunit_price = unit_price * (1 +(tax_rates[tax_index].rate / 100));
 	var qty          = parseFloat(document.getElementById('pstd_'+rowCnt).value);
-	if (isNaN(qty)) qty = 1; // if blank or a non-numeric value is in the pstd field, assume one
+	if (isNaN(qty)){
+		 qty = 0; // if blank or a non-numeric value is in the pstd field, assume null
+		 document.getElementById('pstd_'+rowCnt).value = 0;
+	}
 	var total_line   = qty * unit_price;
 	var total_l      = new String(total_line);
 	var wttotal_line = qty * wtunit_price;
