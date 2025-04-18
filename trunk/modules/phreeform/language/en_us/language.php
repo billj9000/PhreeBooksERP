@@ -254,6 +254,8 @@ define('TEXT_BLACK','Black');
 define('TEXT_ORANGE','Orange');
 define('TEXT_YELLOW','Yellow');
 define('TEXT_WHITE','White');
+define('TEXT_GREY','Grey');
+define('TEXT_LIGHT_GREY','Light Grey');
 // Numbers
 define('TEXT_ZERO','zero');
 define('TEXT_ONE','one');

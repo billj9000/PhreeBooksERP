@@ -103,6 +103,8 @@ $FontColors = array (
   '0:255:0'     => TEXT_GREEN,
   '0:0:255'     => TEXT_BLUE,
   '255:255:255' => TEXT_WHITE,
+  '128:128:128' => TEXT_GREY,
+  '192:192:192' => TEXT_LIGHT_GREY,
 );
 
 $NoYesChoice = array(
