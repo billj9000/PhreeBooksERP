@@ -134,6 +134,8 @@ class paypal_nvp extends payment {
 					'field' => html_pull_down_menu('paypal_nvp_field_2', $expires_month, $order->paypal_nvp_field_2) . '&nbsp;' . html_pull_down_menu('paypal_nvp_field_3', $expires_year, $order->paypal_nvp_field_3)),
 			array(	'title' => MODULE_PAYMENT_CC_TEXT_CVV,
 					'field' => html_input_field('paypal_nvp_field_4', $order->paypal_nvp_field_4, 'size="4" maxlength="4"')),
+			array(	'title' => MODULE_PAYMENT_PAYPAL_NVP_TEXT_TRANSACTION_ID,
+					'field' => html_input_field('paypal_nvp_field_6', $order->paypal_nvp_field_6, 'size="17" maxlength="17" disabled')),
 		));
     return $selection;
   }
@@ -147,7 +149,7 @@ class paypal_nvp extends payment {
     	$messageStack->add(MODULE_PAYMENT_CC_NO_DUPS, 'caution');
 		return false;
 	}
-    $result = $this->validate($this->cc_card_number);
+    $result = $this->validate();
     $error  = '';
     switch ($result) {
       case -1:
@@ -181,6 +183,7 @@ class paypal_nvp extends payment {
     $order->info['cc_owner']   = $this->field_0 . ' ' . $this->field_5;
 	$this->cc_card_owner       = $this->field_0 . ' ' . $this->field_5;
     $order->info['cc_cvv']     = $this->field_4;
+    $order->info['transaction_id'] = $this->field_6;
     
 	switch (substr($this->field_1, 0, 1)) {
 	  case '3': $card_type = 'Amex';       break;
@@ -240,6 +243,15 @@ class paypal_nvp extends payment {
 	if("SUCCESS" == strtoupper($httpParsedResponseAr["ACK"]) || "SUCCESSWITHWARNING" == strtoupper($httpParsedResponseAr["ACK"])) {
 		$messageStack->add(sprintf(MODULE_PAYMENT_PAYPAL_NVP_SUCCESSE_CODE, $httpParsedResponseAr['ACK'], $this->transaction_id, $this->cvv_codes[$httpParsedResponseAr['CVV2MATCH']]), 'success');
 		$messageStack->add('Address verification results: ' . $this->avs_codes[$httpParsedResponseAr['AVSCODE']], 'success');
+		// Save transaction ID
+		$this->field_6 = $this->transaction_id;
+		$card_number = trim($this->field_1);
+		$card_number = substr($card_number, 0, 4) . '********' . substr($card_number, -4);
+		$this->payment_fields = implode(':', array($this->field_0, $card_number, $this->field_2, $this->field_3, $this->field_4, $this->field_5, $this->field_6));
+
+// DEBUG!!!
+		$messageStack->add('payment_fields: ' . $this->payment_fields . ' Trans ID: ' . $this->transaction_id, 'success');	
+
 //echo 'Success response:'; print_r($httpParsedResponseAr); echo '<br>';
 		return false;
 	}

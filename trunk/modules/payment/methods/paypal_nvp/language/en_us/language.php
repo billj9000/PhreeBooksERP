@@ -37,4 +37,5 @@ define('MODULE_PAYMENT_PAYPAL_NVP_LIVE_CERT_URL','https://api.paypal.com/nvp');
 // Catalog Items
 define('MODULE_PAYMENT_PAYPAL_NVP_SUCCESSE_CODE','%s - Transaction ID: %s --> CVV2 results: %s');
 define('MODULE_PAYMENT_PAYPAL_NVP_DECLINE_CODE','Decline Code #');
+define('MODULE_PAYMENT_PAYPAL_NVP_TEXT_TRANSACTION_ID', 'Transaction ID');
 ?>
