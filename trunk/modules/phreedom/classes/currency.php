@@ -19,7 +19,7 @@
 // define how do we update currency exchange rates. Possible values are 'oanda' 'yahoo'
 // xe no longer works as of 2012-02-01
 
-define('CURRENCY_SERVER_PRIMARY', 'oanda');
+define('CURRENCY_SERVER_PRIMARY', 'ecb');
 define('CURRENCY_SERVER_BACKUP',  'yahoo');
 
 class currency {
@@ -127,6 +127,48 @@ class currency {
   	$page = file_get_contents('http://finance.yahoo.com/d/quotes.csv?e=.csv&f=sl1d1t1&s='.$from.$to.'=X');
   	if ($page) $parts = explode(',', trim($page));
   	return ($parts[1] > 0) ? $parts[1] : false;
+  }
+
+  function quote_ecb($to, $from = DEFAULT_CURRENCY) {
+	// Create new SimpleXML element from the Euro zone file
+	// If your PHP configuration does not have allow_url_fopen, you may need to
+	// write a script to pick it up using wget:
+	// wget -O eurofxref-daily.xml www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml
+	// and then uncomment/comment these next two lines:
+	// $xml = new SimpleXMLElement(file_get_contents("eurofxref-daily.xml"));
+	$xml= new SimpleXMLElement(file_get_contents("http://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml"));
+	
+	// extract the default currency's exchange rate.
+	if( $from == "EUR" )
+	{
+		$from_rate = (float)1;
+	}
+	else
+	{
+		$nzd = $xml->xpath("//*[@currency='".$from."']");
+		// Abort if currency not found
+		if(!$nzd) return false;
+		
+		$from_rate = (float)$nzd[0]['rate'];
+	}
+
+	// extract the foreign currency's exchange rate.
+	if( $to == "EUR" )
+	{
+		$to_rate = (float)1;
+	}
+	else
+	{
+		$nzd = $xml->xpath("//*[@currency='".$to."']");
+		// Abort if currency not found
+		if(!$nzd) return false;
+		
+		$to_rate = (float)$nzd[0]['rate'];
+	}
+
+	// Return the value
+	// All rates in the XML are relative to EUR so divide "to" by "from" to get the rate between the two.
+	return $to_rate / $from_rate;
   }
 
   function btn_delete($id = 0) {
