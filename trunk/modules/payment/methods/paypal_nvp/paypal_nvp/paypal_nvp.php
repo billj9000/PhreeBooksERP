@@ -195,7 +195,7 @@ class paypal_nvp extends payment {
 		'SHIPPINGAMT'    => $order->freight,
 		'TAXAMT'         => $order->sales_tax ? $order->sales_tax : 0,
 		'DESC'           => $order->description,
-		'INVNUM'         => $order->purchase_invoice_id,
+		'INVNUM'         => $order->purchase_invoice_id . date( "_U" ),
 		'CREDITCARDTYPE' => $card_type,
 		'ACCT'           => preg_replace('/ /', '', $this->field_1),
 		'EXPDATE'        => $this->field_2 . $this->field_3,
@@ -229,8 +229,8 @@ class paypal_nvp extends payment {
     }
 
 // FOR TEST PURPOSES
-$messageStack->add('Test transaction complete!', 'success');
-return false;
+//$messageStack->add('Test transaction complete!', 'success');
+//return false;
 // END FOR TEST
 
 	// Execute the API operation; see the PPHttpPost function above.
