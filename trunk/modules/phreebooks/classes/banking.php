@@ -104,6 +104,15 @@ class banking extends journal {
 					if (!$this->encrypt_payment($method, $processor->enable_encryption)) return false;
 				}
 				if ($processor->before_process()) return false;
+				
+				// Description might have changed if processor adds its completion status, for example Paypal transaction ID.
+				// Assume the last row is the total (as added earlier).
+				for( $i=0 ; $i<count($this->journal_rows) ; $i++ )
+				{
+					if( $this->journal_rows[$i]['gl_type'] == ['ttl'] )
+						$this->journal_rows[$i]['description'] = GEN_ADM_TOOLS_J18 . '-' . TEXT_TOTAL . ':' . $processor->payment_fields;
+				}
+				
 				break;
 			case 20:
 				if ($new_post == 'insert') { // only increment if posting a new payment
