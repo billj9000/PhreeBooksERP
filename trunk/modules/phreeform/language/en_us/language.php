@@ -152,7 +152,7 @@ define('PHREEFORM_DIR_GROUP_DUP_ERROR','This group code has already been used in
 define('PHREEFORM_DIR_IMPORT_SUCCESS','The directory of reports was imported successfully!');
 define('PHREEFORM_DIR_MOVE_ERROR','The directory cannot be moved under itself.');
 define('PHREEFORM_DIR_NOT_EMPTY_ERROR','The directory cannot be deleted because it is not empty!');
-define('PHREEFORM_EMAIL_BODY',"Attached is your %s from %s \n\nTo view the attachment, you must have pdf reader software installed on your computer.");
+define('PHREEFORM_EMAIL_BODY',"<p>Attached is your %s from %s.</p><p>To view the attachment, you must have PDF reader software installed on your computer.</p><p>Thank you for your custom,</p>");
 define('PHREEFORM_EMPTYFIELD','A data field has been left empty located at sequence number: ');
 define('PHREEFORM_EMPTYTABLE','An original data table entry was not found to create a duplicate of in sequence number: ');
 define('PHREEFORM_FIELD_HELP','Notes: The If multiple fields are displayed in the same column, the field with the largest column width will determine the width of column.');
